@@ -35,7 +35,9 @@ import {
   LogOut,
   Facebook,
   Twitter,
-  Instagram
+  Instagram,
+  Pencil,
+  Edit3
 } from 'lucide-react';
 
 export {
@@ -75,5 +77,7 @@ export {
   LogOut,
   Facebook,
   Twitter,
-  Instagram
+  Instagram,
+  Pencil,
+  Edit3
 };

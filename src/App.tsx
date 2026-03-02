@@ -14,6 +14,15 @@ interface Appointment {
   status: 'pending' | 'accepted' | 'declined';
   tag: 'Urgent' | 'Routine';
   icon: any;
+  notes?: string;
+}
+
+interface ServiceDef {
+  id: string;
+  titleKey: 'plumbing' | 'electrical' | 'carpentry' | 'painting';
+  price: string;
+  img: string;
+  icon: any;
 }
 
 interface User {
@@ -90,7 +99,14 @@ const translations = {
     viewAll: 'View All',
     from: 'From',
     appointments: 'Appointments',
-    pending: 'Pending'
+    pending: 'Pending',
+    edit: 'Edit',
+    save: 'Save',
+    cancel: 'Cancel',
+    notes: 'Notes',
+    manageServices: 'Manage Services',
+    price: 'Price',
+    updatePrice: 'Update Price'
   },
   es: {
     brand: 'MaintenCo',
@@ -152,7 +168,14 @@ const translations = {
     viewAll: 'Ver Todo',
     from: 'Desde',
     appointments: 'Citas',
-    pending: 'En espera'
+    pending: 'En espera',
+    edit: 'Editar',
+    save: 'Guardar',
+    cancel: 'Cancelar',
+    notes: 'Notas',
+    manageServices: 'Gestionar Servicios',
+    price: 'Precio',
+    updatePrice: 'Actualizar Precio'
   }
 };
 
@@ -384,14 +407,12 @@ const Navbar = ({
 
 // --- Views ---
 
-const HomeView = ({ onSchedule, t }: { onSchedule: () => void; t: (k: keyof typeof translations['en']) => string; key?: string }) => {
-  const services = [
-    { title: t('plumbing'), price: '$89/hr', img: "/images/plumbing.png", icon: Icons.Droplets },
-    { title: t('carpentry'), price: '$75/hr', img: "/images/carpentry.png", icon: Icons.Hammer },
-    { title: t('painting'), price: '$65/hr', img: "/images/painting.png", icon: Icons.Paintbrush },
-    { title: t('electrical'), price: '$95/hr', img: "/images/electrical.png", icon: Icons.Zap },
-  ];
-
+const HomeView = ({ onSchedule, services, t }: {
+  onSchedule: () => void;
+  services: ServiceDef[];
+  t: (k: keyof typeof translations['en']) => string;
+  key?: string
+}) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -435,16 +456,16 @@ const HomeView = ({ onSchedule, t }: { onSchedule: () => void; t: (k: keyof type
             <button className="text-primary text-sm font-semibold">{t('viewAll')}</button>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            {services.map((service, i) => (
-              <div key={i} className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:border-primary/50 transition-all cursor-pointer group hover:shadow-md" onClick={onSchedule}>
+            {services.map((service) => (
+              <div key={service.id} className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:border-primary/50 transition-all cursor-pointer group hover:shadow-md" onClick={onSchedule}>
                 <div className="h-56 w-full overflow-hidden relative">
-                  <img src={service.img} alt={service.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <img src={service.img} alt={t(service.titleKey)} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   <div className="absolute top-4 left-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 backdrop-blur shadow-sm text-primary">
                     <service.icon className="w-5 h-5" />
                   </div>
                 </div>
                 <div className="p-4">
-                  <h3 className="text-slate-900 text-base font-bold">{service.title}</h3>
+                  <h3 className="text-slate-900 text-base font-bold">{t(service.titleKey)}</h3>
                   <p className="text-slate-500 text-xs mt-1">{t('from')} <span className="font-bold text-slate-700">{service.price}</span></p>
                 </div>
               </div>
@@ -651,19 +672,48 @@ const RegisterView = ({ onRegister, onSwitchToLogin, t }: { onRegister: (user: U
 
 const AdminView = ({
   appointments,
+  services,
   onAccept,
   onDecline,
+  onEdit,
+  onUpdateService,
   t
 }: {
   appointments: Appointment[];
+  services: ServiceDef[];
   onAccept: (id: string) => void;
   onDecline: (id: string) => void;
+  onEdit: (id: string, updated: Partial<Appointment>) => void;
+  onUpdateService: (id: string, updated: Partial<ServiceDef>) => void;
   t: (k: keyof typeof translations['en']) => string;
   key?: string;
 }) => {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Appointment> | null>(null);
+
   const pendingCount = appointments.filter(a => a.status === 'pending').length;
   const acceptedCount = appointments.filter(a => a.status === 'accepted').length;
   const declinedCount = appointments.filter(a => a.status === 'declined').length;
+
+  const startEdit = (appt: Appointment) => {
+    setEditingId(appt.id);
+    setEditForm({ ...appt });
+  };
+
+  const handleSave = () => {
+    if (editingId && editForm) {
+      onEdit(editingId, editForm);
+      setEditingId(null);
+      setEditForm(null);
+    }
+  };
+
+  const servicesList = [
+    { label: t('plumbing'), icon: Icons.Droplets },
+    { label: t('electrical'), icon: Icons.Zap },
+    { label: t('carpentry'), icon: Icons.Hammer },
+    { label: t('painting'), icon: Icons.Paintbrush },
+  ];
 
   return (
     <motion.div
@@ -672,9 +722,8 @@ const AdminView = ({
       exit={{ opacity: 0 }}
       className="pb-24"
     >
-
-
       <main className="p-4 space-y-6">
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: t('pendingAppts'), val: pendingCount.toString(), trend: '+5%', up: true },
@@ -692,12 +741,50 @@ const AdminView = ({
           ))}
         </div>
 
+        {/* Manage Services */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-slate-900 text-lg font-bold">{t('manageServices')}</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {services.map((svc) => (
+              <div key={svc.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <svc.icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">{t(svc.titleKey as any)}</h4>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
+                    <input
+                      type="text"
+                      defaultValue={svc.price.replace('$', '')}
+                      onBlur={(e) => {
+                        const newPrice = `$${e.target.value}`;
+                        if (newPrice !== svc.price) {
+                          onUpdateService(svc.id, { price: newPrice });
+                        }
+                      }}
+                      className="w-24 pl-6 pr-3 py-2 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Appointments List */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-slate-900 text-lg font-bold">{t('appointments')}</h3>
           </div>
 
-          {appointments.filter(a => a.status === 'pending').map((req) => (
+          {appointments.map((req) => (
             <div key={req.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col gap-4">
               <div className="flex justify-between items-start">
                 <div className="flex gap-3">
@@ -706,45 +793,194 @@ const AdminView = ({
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-900 text-base">{req.service}</h4>
-                    <p className="text-slate-500 text-xs">{req.clientName} â€¢ {req.date} {req.time}</p>
+                    <p className="text-slate-500 text-xs">{req.clientName} • {req.date} {req.time}</p>
+                    <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${req.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
+                      req.status === 'declined' ? 'bg-rose-100 text-rose-700' :
+                        'bg-slate-100 text-slate-500'
+                      }`}>
+                      {req.status}
+                    </span>
                   </div>
                 </div>
-                <span className={`px-2 py-1 ${req.tag === 'Urgent' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'} text-[10px] font-bold uppercase rounded`}>
-                  {req.tag === 'Urgent' ? t('urgent') : t('routine')}
-                </span>
+                <div className="flex flex-col items-end gap-2">
+                  <span className={`px-2 py-1 ${req.tag === 'Urgent' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'} text-[10px] font-bold uppercase rounded`}>
+                    {req.tag === 'Urgent' ? t('urgent') : t('routine')}
+                  </span>
+                  <button
+                    onClick={() => startEdit(req)}
+                    className="p-1.5 rounded-lg bg-slate-50 text-slate-400 hover:text-primary transition-colors"
+                  >
+                    <Icons.Edit3 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onAccept(req.id)}
-                  className="flex-1 bg-primary text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                >
-                  <Icons.Check className="w-4 h-4" /> {t('accept')}
-                </button>
-                <button
-                  onClick={() => onDecline(req.id)}
-                  className="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                >
-                  <Icons.X className="w-4 h-4" /> {t('decline')}
-                </button>
-              </div>
+
+              {req.status === 'pending' && (
+                <div className="flex gap-2 pt-2 border-t border-slate-50">
+                  <button
+                    onClick={() => onAccept(req.id)}
+                    className="flex-1 bg-primary text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                  >
+                    <Icons.Check className="w-4 h-4" /> {t('accept')}
+                  </button>
+                  <button
+                    onClick={() => onDecline(req.id)}
+                    className="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                  >
+                    <Icons.X className="w-4 h-4" /> {t('decline')}
+                  </button>
+                </div>
+              )}
             </div>
           ))}
 
-          {appointments.filter(a => a.status === 'pending').length === 0 && (
+          {appointments.length === 0 && (
             <div className="text-center py-10">
               <Icons.Inbox className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-              <p className="text-slate-400 font-medium">{t('noAccount') === "Don't have an account?" ? 'No pending requests' : 'No hay solicitudes pendientes'}</p>
+              <p className="text-slate-400 font-medium">{t('noAccount') === "Don't have an account?" ? 'No appointments found' : 'No se encontraron citas'}</p>
             </div>
           )}
         </div>
       </main>
+
+      {/* Edit Modal/Panel */}
+      <AnimatePresence>
+        {editingId && editForm && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditingId(null)}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200]"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-white rounded-t-[32px] shadow-2xl z-[201] overflow-y-auto"
+            >
+              <div className="p-6 pb-12 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-black text-slate-900">{t('edit')}</h3>
+                  <button
+                    onClick={() => setEditingId(null)}
+                    className="p-2 rounded-full bg-slate-100 text-slate-400"
+                  >
+                    <Icons.X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Service Selector in Edit */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('selectService')}</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {servicesList.map((s, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setEditForm({ ...editForm, service: s.label, icon: s.icon })}
+                          className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${editForm.service === s.label
+                            ? 'border-primary bg-primary/5 text-primary'
+                            : 'border-slate-100 text-slate-600 hover:border-slate-200'
+                            }`}
+                        >
+                          <s.icon className="w-5 h-5" />
+                          <span className="text-sm font-bold">{s.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tag/Priority */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('status')}</label>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setEditForm({ ...editForm, tag: 'Routine' })}
+                        className={`flex-1 py-3 rounded-xl text-sm font-bold border-2 transition-all ${editForm.tag === 'Routine'
+                          ? 'border-blue-500 bg-blue-50 text-blue-600'
+                          : 'border-slate-100 text-slate-400'
+                          }`}
+                      >
+                        {t('routine')}
+                      </button>
+                      <button
+                        onClick={() => setEditForm({ ...editForm, tag: 'Urgent' })}
+                        className={`flex-1 py-3 rounded-xl text-sm font-bold border-2 transition-all ${editForm.tag === 'Urgent'
+                          ? 'border-amber-500 bg-amber-50 text-amber-600'
+                          : 'border-slate-100 text-slate-400'
+                          }`}
+                      >
+                        {t('urgent')}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Date & Time */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('selectDate')}</label>
+                      <input
+                        type="text"
+                        value={editForm.date || ''}
+                        onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                        className="w-full p-3 rounded-xl border-2 border-slate-100 text-sm font-bold focus:border-primary outline-none transition-all"
+                        placeholder="e.g. Mar 5"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('selectTime')}</label>
+                      <input
+                        type="text"
+                        value={editForm.time || ''}
+                        onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
+                        className="w-full p-3 rounded-xl border-2 border-slate-100 text-sm font-bold focus:border-primary outline-none transition-all"
+                        placeholder="e.g. 09:00 AM"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('notes')}</label>
+                    <textarea
+                      value={editForm.notes || ''}
+                      onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                      className="w-full p-3 rounded-xl border-2 border-slate-100 text-sm font-medium focus:border-primary outline-none transition-all min-h-[100px]"
+                      placeholder="..."
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => setEditingId(null)}
+                    className="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-600 font-bold transition-all active:scale-95"
+                  >
+                    {t('cancel')}
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="flex-1 py-4 rounded-2xl bg-primary text-white font-bold shadow-xl shadow-primary/25 transition-all active:scale-95"
+                  >
+                    {t('save')}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
 
-const ScheduleView = ({ onSchedule, appointments, t }: {
+const ScheduleView = ({ onSchedule, appointments, services, t }: {
   onSchedule: (appt: Omit<Appointment, 'id' | 'status'>) => void;
   appointments: Appointment[];
+  services: ServiceDef[];
   t: (k: keyof typeof translations['en']) => string;
   key?: string;
 }) => {
@@ -762,13 +998,6 @@ const ScheduleView = ({ onSchedule, appointments, t }: {
   const [selectedTime, setSelectedTime] = useState('09:00 AM');
   const [selectedTag, setSelectedTag] = useState<'Routine' | 'Urgent'>('Routine');
   const [selectedService, setSelectedService] = useState(0);
-
-  const services = [
-    { label: t('plumbing'), icon: Icons.Droplets },
-    { label: t('carpentry'), icon: Icons.Hammer },
-    { label: t('painting'), icon: Icons.Paintbrush },
-    { label: t('electrical'), icon: Icons.Zap },
-  ];
 
   // Determine the state of each time slot based on existing appointments
   const getSlotStatus = (time: string): 'available' | 'pending' | 'booked' => {
@@ -817,7 +1046,7 @@ const ScheduleView = ({ onSchedule, appointments, t }: {
                     : 'bg-white border-slate-200 text-slate-500 hover:border-primary/50'}`}
               >
                 <Icon className="w-5 h-5" />
-                <span className="text-[10px] font-bold uppercase tracking-tight leading-none">{svc.label}</span>
+                <span className="text-[10px] font-bold uppercase tracking-tight leading-none">{t(svc.titleKey)}</span>
               </button>
             );
           })}
@@ -938,13 +1167,13 @@ const ScheduleView = ({ onSchedule, appointments, t }: {
           <div className="text-right">
             <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t('schedule')}</span>
             <p className="text-sm font-bold">{monthNameShort} {selectedDay} • {selectedTime}</p>
-            <p className="text-xs text-slate-500">{services[selectedService].label}</p>
+            <p className="text-xs text-slate-500">{t(services[selectedService].titleKey)}</p>
           </div>
         </div>
         <button
           onClick={() => onSchedule({
             clientName: 'Example Client',
-            service: services[selectedService].label,
+            service: t(services[selectedService].titleKey),
             date: `${monthNameShort} ${selectedDay}`,
             time: selectedTime,
             tag: selectedTag,
@@ -972,6 +1201,13 @@ export default function App() {
     const saved = localStorage.getItem('mainten_lang');
     return (saved as Language) || 'en';
   });
+
+  const [services, setServices] = useState<ServiceDef[]>([
+    { id: '1', titleKey: 'plumbing', price: '$89/hr', img: "/images/plumbing.png", icon: Icons.Droplets },
+    { id: '2', titleKey: 'carpentry', price: '$75/hr', img: "/images/carpentry.png", icon: Icons.Hammer },
+    { id: '3', titleKey: 'painting', price: '$65/hr', img: "/images/painting.png", icon: Icons.Paintbrush },
+    { id: '4', titleKey: 'electrical', price: '$95/hr', img: "/images/electrical.png", icon: Icons.Zap },
+  ]);
 
   // Redirect non-admin users away from admin view
   useEffect(() => {
@@ -1055,6 +1291,14 @@ export default function App() {
     setAppointments(appointments.map(a => a.id === id ? { ...a, status } : a));
   };
 
+  const handleEditAppointment = (id: string, updated: Partial<Appointment>) => {
+    setAppointments(appointments.map(a => a.id === id ? { ...a, ...updated } : a));
+  };
+
+  const handleUpdateService = (id: string, updated: Partial<ServiceDef>) => {
+    setServices(services.map(s => s.id === id ? { ...s, ...updated } : s));
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f6f8] pt-16 relative">
       <Navbar
@@ -1070,7 +1314,7 @@ export default function App() {
       <main className="flex-1">
         <div className="max-w-7xl mx-auto">
           <AnimatePresence mode="wait">
-            {view === 'home' && <HomeView key="home" onSchedule={handleScheduleClick} t={t} />}
+            {view === 'home' && <HomeView key="home" onSchedule={handleScheduleClick} services={services} t={t} />}
             {view === 'register' && (
               <RegisterView
                 key="register"
@@ -1091,8 +1335,11 @@ export default function App() {
               <AdminView
                 key="admin"
                 appointments={appointments}
+                services={services}
                 onAccept={(id) => updateAppointmentStatus(id, 'accepted')}
                 onDecline={(id) => updateAppointmentStatus(id, 'declined')}
+                onEdit={handleEditAppointment}
+                onUpdateService={handleUpdateService}
                 t={t}
               />
             )}
@@ -1101,6 +1348,7 @@ export default function App() {
                 key="schedule"
                 onSchedule={addAppointment}
                 appointments={appointments}
+                services={services}
                 t={t}
               />
             )}

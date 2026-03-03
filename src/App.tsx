@@ -980,7 +980,7 @@ const AdminView = ({
                         value={editForm.date || ''}
                         onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
                         className="w-full p-3 rounded-xl border-2 border-slate-100 text-sm font-bold focus:border-primary outline-none transition-all"
-                        placeholder="e.g. Mar 5"
+                        placeholder="e.g. Mar 4"
                       />
                     </div>
                     <div className="space-y-2">
@@ -990,7 +990,7 @@ const AdminView = ({
                         value={editForm.time || ''}
                         onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
                         className="w-full p-3 rounded-xl border-2 border-slate-100 text-sm font-bold focus:border-primary outline-none transition-all"
-                        placeholder="e.g. 09:00 AM"
+                        placeholder="11:00"
                       />
                     </div>
                   </div>

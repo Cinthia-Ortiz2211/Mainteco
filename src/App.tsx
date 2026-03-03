@@ -801,30 +801,40 @@ const AdminView = ({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {services.map((svc) => (
-              <div key={svc.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                    <svc.icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-slate-900 text-sm">{t(svc.titleKey as any)}</h4>
+              <div key={svc.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                      <svc.icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">{t(svc.titleKey as any)}</h4>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
+                <div className="flex items-center gap-3 pt-2 border-t border-slate-50">
+                  <div className="relative flex-1">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
                     <input
+                      id={`price-${svc.id}`}
                       type="text"
-                      defaultValue={svc.price.replace('$', '')}
-                      onBlur={(e) => {
-                        const newPrice = `$${e.target.value}`;
-                        if (newPrice !== svc.price) {
-                          onUpdateService(svc.id, { price: newPrice });
-                        }
-                      }}
-                      className="w-24 pl-6 pr-3 py-2 bg-slate-50 border border-slate-100 rounded-lg text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      defaultValue={svc.price.replace('$', '').replace('/hr', '')}
+                      className="w-full pl-6 pr-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                     />
                   </div>
+                  <button
+                    onClick={() => {
+                      const input = document.getElementById(`price-${svc.id}`) as HTMLInputElement;
+                      if (input) {
+                        const val = input.value;
+                        onUpdateService(svc.id, { price: `$${val}/hr` });
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-primary text-white rounded-xl text-xs font-bold flex items-center gap-2 active:scale-95 transition-all shadow-sm shadow-primary/20"
+                  >
+                    <Icons.Check className="w-4 h-4" />
+                    {t('updatePrice')}
+                  </button>
                 </div>
               </div>
             ))}

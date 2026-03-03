@@ -1533,12 +1533,18 @@ export default function App() {
 
     // Special case for admin login without prior registration (if no registered admin)
     if (isAdmin) {
-      const adminUser: User = { firstName: 'Admin', lastName: 'MaintenCo', email, phone: '', role: 'admin', password };
-      setRegisteredUsers([...registeredUsers, adminUser]);
-      localStorage.setItem('mainten_all_users', JSON.stringify([...registeredUsers, adminUser]));
-      setUser(adminUser);
-      localStorage.setItem('mainten_user', JSON.stringify(adminUser));
-      setView('admin');
+      if (password === 'Contraseña') {
+        const adminUser: User = { firstName: 'Admin', lastName: 'MaintenCo', email, phone: '', role: 'admin', password };
+        setRegisteredUsers([...registeredUsers, adminUser]);
+        localStorage.setItem('mainten_all_users', JSON.stringify([...registeredUsers, adminUser]));
+        setUser(adminUser);
+        localStorage.setItem('mainten_user', JSON.stringify(adminUser));
+        setView('admin');
+      } else {
+        const msg = t('wrongPassword');
+        setAuthError(msg);
+        alert(msg);
+      }
       return;
     }
 

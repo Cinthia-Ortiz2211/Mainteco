@@ -181,7 +181,7 @@ const translations = {
     manageServices: 'Gestionar Servicios',
     price: 'Precio',
     updatePrice: 'Actualizar Precio',
-    userNotFound: 'Usuario no registrado',
+    userNotFound: 'no se encuentra registrado',
     wrongPassword: 'Contraseña incorrecta',
     password: 'Contraseña',
     alreadyRegistered: 'Correo ya registrado'
@@ -1307,7 +1307,9 @@ export default function App() {
         localStorage.setItem('mainten_user', JSON.stringify(updatedUser));
         setView(isAdmin ? 'admin' : 'schedule');
       } else {
-        setAuthError(t('wrongPassword'));
+        const msg = t('wrongPassword');
+        setAuthError(msg);
+        alert(msg);
       }
       return;
     }
@@ -1323,7 +1325,9 @@ export default function App() {
       return;
     }
 
-    setAuthError(t('userNotFound'));
+    const msg = t('userNotFound');
+    setAuthError(msg);
+    alert(msg);
   };
 
   const handleLogout = () => {

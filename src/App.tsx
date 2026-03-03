@@ -735,7 +735,10 @@ const AdminView = ({
   onDecline,
   onEdit,
   onUpdateService,
-  t
+  blockedDates,
+  onToggleBlockedDate,
+  t,
+  language
 }: {
   appointments: Appointment[];
   services: ServiceDef[];
@@ -743,8 +746,11 @@ const AdminView = ({
   onDecline: (id: string) => void;
   onEdit: (id: string, updated: Partial<Appointment>) => void;
   onUpdateService: (id: string, updated: Partial<ServiceDef>) => void;
+  blockedDates: string[];
+  onToggleBlockedDate: (date: string) => void;
   t: (k: keyof typeof translations['en']) => string;
   key?: string;
+  language: Language;
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Appointment> | null>(null);
@@ -795,49 +801,57 @@ const AdminView = ({
         </div>
 
         {/* Manage Services */}
+        {/* ... existing services code ... */}
+
+        {/* Availability Management */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-slate-900 text-lg font-bold">{t('manageServices')}</h3>
+            <h3 className="text-slate-900 text-lg font-bold">{t('availability' as any) || (language === 'es' ? 'Gestionar Disponibilidad' : 'Manage Availability')}</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {services.map((svc) => (
-              <div key={svc.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                      <svc.icon className="w-5 h-5" />
+          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
+            <p className="text-slate-500 text-sm">
+              {language === 'es'
+                ? 'Selecciona una fecha para bloquearla (ej. vacaciones). Los clientes no podrán agendar citas en estas fechas.'
+                : 'Select a date to block it (e.g., vacations). Clients won\'t be able to schedule appointments on these dates.'}
+            </p>
+            <div className="flex gap-2">
+              <input
+                id="block-date-input"
+                type="text"
+                placeholder="Mar 10"
+                className="flex-1 p-3 rounded-xl border-2 border-slate-100 text-sm font-bold focus:border-primary outline-none transition-all"
+              />
+              <button
+                onClick={() => {
+                  const input = document.getElementById('block-date-input') as HTMLInputElement;
+                  if (input && input.value) {
+                    onToggleBlockedDate(input.value);
+                    input.value = '';
+                  }
+                }}
+                className="px-6 py-3 bg-primary text-white rounded-xl text-sm font-bold active:scale-95 transition-all shadow-md shadow-primary/20"
+              >
+                {language === 'es' ? 'Bloquear/Desbloquear' : 'Block/Unblock'}
+              </button>
+            </div>
+
+            {blockedDates.length > 0 && (
+              <div className="pt-4 space-y-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  {language === 'es' ? 'Fechas Bloqueadas' : 'Blocked Dates'}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {blockedDates.map(date => (
+                    <div key={date} className="flex items-center gap-2 px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 text-xs font-bold">
+                      {date}
+                      <button onClick={() => onToggleBlockedDate(date)} className="hover:text-rose-800 transition-colors">
+                        <Icons.X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{t(svc.titleKey as any)}</h4>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 pt-2 border-t border-slate-50">
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">$</span>
-                    <input
-                      id={`price-${svc.id}`}
-                      type="text"
-                      defaultValue={svc.price.replace('$', '').replace('/hr', '')}
-                      className="w-full pl-6 pr-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                    />
-                  </div>
-                  <button
-                    onClick={() => {
-                      const input = document.getElementById(`price-${svc.id}`) as HTMLInputElement;
-                      if (input) {
-                        const val = input.value;
-                        onUpdateService(svc.id, { price: `$${val}/hr` });
-                      }
-                    }}
-                    className="px-4 py-2.5 bg-primary text-white rounded-xl text-xs font-bold flex items-center gap-2 active:scale-95 transition-all shadow-sm shadow-primary/20"
-                  >
-                    <Icons.Check className="w-4 h-4" />
-                    {t('updatePrice')}
-                  </button>
+                  ))}
                 </div>
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -1129,11 +1143,12 @@ const UserAppointmentsView = ({
   );
 };
 
-const ScheduleView = ({ user, onSchedule, appointments, services, t, language }: {
+const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, t, language }: {
   user: User | null;
   onSchedule: (appt: Omit<Appointment, 'id' | 'status'>) => void;
   appointments: Appointment[];
   services: ServiceDef[];
+  blockedDates: string[];
   t: (k: keyof typeof translations['en']) => string;
   language: Language;
   key?: string;
@@ -1198,7 +1213,8 @@ const ScheduleView = ({ user, onSchedule, appointments, services, t, language }:
   }, [selectedDay, appointments]);
 
   const SelectedIcon = services[selectedService].icon;
-  const isSelectedSlotAvailable = getSlotStatus(selectedTime) === 'available';
+  const isBlockedDate = blockedDates.includes(`${monthNameShort} ${selectedDay}`);
+  const isSelectedSlotAvailable = !isBlockedDate && getSlotStatus(selectedTime) === 'available';
 
   return (
     <motion.div
@@ -1298,43 +1314,60 @@ const ScheduleView = ({ user, onSchedule, appointments, services, t, language }:
       </div>
 
       <div className="mt-8 px-4 space-y-4">
-        <h3 className="text-lg font-bold tracking-tight">{t('selectTime')}</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {timeSlots.map((slot, i) => {
-            const slotStatus = getSlotStatus(slot.time);
-            const isSelected = selectedTime === slot.time;
-            const isBooked = slotStatus === 'booked';
-            const isPending = slotStatus === 'pending';
-            const isPastSlot = slotStatus === 'past';
-            return (
-              <button
-                key={i}
-                disabled={isBooked || isPending || isPastSlot}
-                onClick={() => setSelectedTime(slot.time)}
-                className={`flex flex-col items-center justify-center py-4 rounded-2xl transition-all border-2
-                  ${isBooked || isPastSlot
-                    ? 'bg-rose-50 border-rose-200 cursor-not-allowed opacity-70'
-                    : isPending
-                      ? 'bg-amber-50 border-amber-300 cursor-not-allowed'
-                      : isSelected
-                        ? 'bg-primary/10 border-primary text-primary'
-                        : 'bg-white border-slate-200 hover:border-primary/50'}`}
-              >
-                <span className={`text-sm font-bold ${isBooked || isPastSlot ? 'text-rose-400' : isPending ? 'text-amber-500' : ''
-                  }`}>{slot.time}</span>
-                <span className="text-[10px] font-medium opacity-70">
-                  {isBooked
-                    ? t('booked')
-                    : isPending
-                      ? t('pending')
-                      : isPastSlot
-                        ? t('past')
-                        : slot.period}
-                </span>
-              </button>
-            );
-          })}
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold tracking-tight">{t('selectTime')}</h3>
         </div>
+
+        {isBlockedDate ? (
+          <div className="p-12 text-center bg-rose-50 rounded-[32px] border-2 border-rose-100 border-dashed">
+            <Icons.Calendar className="w-12 h-12 text-rose-300 mx-auto mb-4" />
+            <h4 className="text-rose-900 font-bold mb-2">
+              {language === 'es' ? 'No Disponible' : 'Not Available'}
+            </h4>
+            <p className="text-rose-600 text-xs font-medium leading-relaxed">
+              {language === 'es'
+                ? 'El profesional se encuentra ausente o de vacaciones en esta fecha. Por favor, selecciona otro día.'
+                : 'The professional is absent or on vacation on this date. Please select another day.'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {timeSlots.map((slot, i) => {
+              const slotStatus = getSlotStatus(slot.time);
+              const isSelected = selectedTime === slot.time;
+              const isBooked = slotStatus === 'booked';
+              const isPending = slotStatus === 'pending';
+              const isPastSlot = slotStatus === 'past';
+              return (
+                <button
+                  key={i}
+                  disabled={isBooked || isPending || isPastSlot}
+                  onClick={() => setSelectedTime(slot.time)}
+                  className={`flex flex-col items-center justify-center py-4 rounded-2xl transition-all border-2
+                    ${isBooked || isPastSlot
+                      ? 'bg-rose-50 border-rose-200 cursor-not-allowed opacity-70'
+                      : isPending
+                        ? 'bg-amber-50 border-amber-300 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-primary/10 border-primary text-primary'
+                          : 'bg-white border-slate-200 hover:border-primary/50'}`}
+                >
+                  <span className={`text-sm font-bold ${isBooked || isPastSlot ? 'text-rose-400' : isPending ? 'text-amber-500' : ''
+                    }`}>{slot.time}</span>
+                  <span className="text-[10px] font-medium opacity-70">
+                    {isBooked
+                      ? t('booked')
+                      : isPending
+                        ? t('pending')
+                        : isPastSlot
+                          ? t('past')
+                          : slot.period}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="mt-10 p-4 pb-12 space-y-6">
@@ -1480,6 +1513,12 @@ export default function App() {
     const saved = localStorage.getItem('mainten_all_users');
     return saved ? JSON.parse(saved) : [];
   });
+
+  const [blockedDates, setBlockedDates] = useState<string[]>(() => {
+    const saved = localStorage.getItem('mainten_blocked_dates');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Redirect non-admin users away from admin view
@@ -1518,6 +1557,14 @@ export default function App() {
     setUser(userWithRole);
     localStorage.setItem('mainten_user', JSON.stringify(userWithRole));
     setView('schedule');
+  };
+
+  const toggleBlockedDate = (date: string) => {
+    const newBlocked = blockedDates.includes(date)
+      ? blockedDates.filter(d => d !== date)
+      : [...blockedDates, date];
+    setBlockedDates(newBlocked);
+    localStorage.setItem('mainten_blocked_dates', JSON.stringify(newBlocked));
   };
 
   const handleLogin = (email: string, password?: string) => {
@@ -1641,12 +1688,15 @@ export default function App() {
               <AdminView
                 key="admin"
                 appointments={appointments}
-                services={services}
                 onAccept={(id) => updateAppointmentStatus(id, 'accepted')}
                 onDecline={(id) => updateAppointmentStatus(id, 'declined')}
                 onEdit={handleEditAppointment}
+                services={services}
                 onUpdateService={handleUpdateService}
+                blockedDates={blockedDates}
+                onToggleBlockedDate={toggleBlockedDate}
                 t={t}
+                language={language}
               />
             )}
             {view === 'schedule' && (
@@ -1656,6 +1706,7 @@ export default function App() {
                 onSchedule={addAppointment}
                 appointments={appointments}
                 services={services}
+                blockedDates={blockedDates}
                 t={t}
                 language={language}
               />

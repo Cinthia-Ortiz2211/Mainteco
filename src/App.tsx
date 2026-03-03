@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import * as Icons from './icons';
 
 // --- Types ---
-type View = 'home' | 'register' | 'admin' | 'schedule' | 'login' | 'my-appointments';
+type View = 'home' | 'register' | 'register-success' | 'admin' | 'schedule' | 'login' | 'my-appointments';
 
 interface Appointment {
   id: string;
@@ -185,6 +185,9 @@ const translations = {
     testimonial3Name: 'Ana Rodríguez',
     readyToStart: 'Ready to get started?',
     readyToStartSub: 'Schedule your first appointment today and enjoy a worry-free home.',
+    registerSuccess: 'Registration Successful!',
+    registerSuccessDesc: 'Your account has been created successfully. You can now sign in and schedule your appointment.',
+    goToLogin: 'Sign In',
     monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
   },
   es: {
@@ -292,6 +295,9 @@ const translations = {
     testimonial3Name: 'Ana Rodríguez',
     readyToStart: '¿Listo para comenzar?',
     readyToStartSub: 'Agenda tu primera cita hoy y disfruta de un hogar sin preocupaciones.',
+    registerSuccess: '¡Registro exitoso!',
+    registerSuccessDesc: 'Tu cuenta ha sido creada correctamente. Ya podés iniciar sesión y agendar tu cita.',
+    goToLogin: 'Iniciar Sesión',
     monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
   }
 };
@@ -907,6 +913,38 @@ const RegisterView = ({ onRegister, onSwitchToLogin, t }: { onRegister: (user: U
             </div>
           </div>
         </form>
+      </div>
+    </motion.div>
+  );
+};
+
+const RegisterSuccessView = ({ onGoToLogin, t }: { onGoToLogin: () => void; t: (k: keyof typeof translations['en']) => string; key?: string }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="pb-24 min-h-screen flex items-center justify-center px-4"
+    >
+      <div className="w-full max-w-md text-center">
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-8 md:p-10 flex flex-col items-center gap-5">
+          <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center">
+            <Icons.CheckCircle2 className="w-10 h-10 text-green-500" />
+          </div>
+          <h1 className="text-slate-900 text-2xl md:text-3xl font-black tracking-tight">
+            {t('registerSuccess')}
+          </h1>
+          <p className="text-slate-500 text-sm md:text-base leading-relaxed max-w-sm">
+            {t('registerSuccessDesc')}
+          </p>
+          <button
+            onClick={onGoToLogin}
+            className="mt-4 w-full flex items-center justify-center gap-2 rounded-2xl h-14 px-8 bg-primary hover:bg-[#1240a8] text-white text-base font-extrabold shadow-lg active:scale-95 transition-all duration-200"
+          >
+            {t('goToLogin')}
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+          </button>
+        </div>
       </div>
     </motion.div>
   );
@@ -2160,6 +2198,8 @@ export default function App() {
     }
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2000);
       const response = await fetch(`${API_URL}/appointments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2171,8 +2211,10 @@ export default function App() {
           date: appt.date,
           time: appt.time,
           tag: appt.tag,
-        })
+        }),
+        signal: controller.signal
       });
+      clearTimeout(timeout);
 
       if (response.ok) {
         const newAppt = await response.json();
@@ -2204,17 +2246,21 @@ export default function App() {
 
   const handleRegister = async (userData: User) => {
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2000);
       const response = await fetch(`${API_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
+        body: JSON.stringify(userData),
+        signal: controller.signal
       });
+      clearTimeout(timeout);
 
       if (response.ok) {
         const newUser = await response.json();
         setUser(newUser);
         localStorage.setItem('mainten_user', JSON.stringify(newUser));
-        setView('schedule');
+        setView('register-success');
       } else {
         const data = await response.json();
         alert(data.error || 'Registration failed');
@@ -2227,9 +2273,14 @@ export default function App() {
         id: Date.now().toString(),
         role: userData.email === ADMIN_EMAIL ? 'admin' : 'user'
       };
+      // Save to registered users list
+      const existingUsers = JSON.parse(localStorage.getItem('mainten_users') || '[]');
+      const filtered = existingUsers.filter((u: User) => u.email !== localUser.email);
+      filtered.push(localUser);
+      localStorage.setItem('mainten_users', JSON.stringify(filtered));
       setUser(localUser);
       localStorage.setItem('mainten_user', JSON.stringify(localUser));
-      setView('schedule');
+      setView('register-success');
     }
   };
 
@@ -2272,11 +2323,15 @@ export default function App() {
   const handleLogin = async (email: string, password?: string) => {
     setAuthError(null);
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2000);
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
+        signal: controller.signal
       });
+      clearTimeout(timeout);
 
       if (response.ok) {
         const loggedUser = await response.json();
@@ -2291,6 +2346,16 @@ export default function App() {
     } catch (error) {
       console.error('Error during login:', error);
       // Fallback: login locally when backend is unavailable
+      // Check all locally registered users
+      const allUsers: User[] = JSON.parse(localStorage.getItem('mainten_users') || '[]');
+      const foundUser = allUsers.find((u: User) => u.email === email);
+      if (foundUser) {
+        setUser(foundUser);
+        localStorage.setItem('mainten_user', JSON.stringify(foundUser));
+        setView(foundUser.role === 'admin' ? 'admin' : 'home');
+        return;
+      }
+      // Also check single stored user (legacy)
       const stored = localStorage.getItem('mainten_user');
       if (stored) {
         const storedUser = JSON.parse(stored);
@@ -2315,7 +2380,7 @@ export default function App() {
         setView('admin');
         return;
       }
-      alert('No se encontró una cuenta local con ese correo. Regístrate primero.');
+      alert('No se encontró una cuenta con ese correo. Regístrate primero.');
     }
   };
 
@@ -2397,6 +2462,17 @@ export default function App() {
                 onLogin={handleLogin}
                 onSwitchToRegister={() => setView('register')}
                 error={authError || undefined}
+                t={t}
+              />
+            )}
+            {view === 'register-success' && (
+              <RegisterSuccessView
+                key="register-success"
+                onGoToLogin={() => {
+                  setUser(null);
+                  localStorage.removeItem('mainten_user');
+                  setView('login');
+                }}
                 t={t}
               />
             )}

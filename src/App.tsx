@@ -7,8 +7,10 @@ type View = 'home' | 'register' | 'admin' | 'schedule' | 'login' | 'my-appointme
 
 interface Appointment {
   id: string;
+  userId: string;
   clientName: string;
   service: string;
+  serviceIndex: string; // Add index for icon/meta lookup
   date: string;
   time: string;
   status: 'pending' | 'accepted' | 'declined';
@@ -16,6 +18,8 @@ interface Appointment {
   icon: any;
   notes?: string;
 }
+
+type AppointmentPayload = Omit<Appointment, 'id' | 'status' | 'clientName' | 'icon' | 'userId'>;
 
 interface ServiceDef {
   id: string;
@@ -26,6 +30,7 @@ interface ServiceDef {
 }
 
 interface User {
+  id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -36,8 +41,43 @@ interface User {
 
 // The one email that grants admin access
 const ADMIN_EMAIL = 'admin@maintenco.com';
+const API_URL = 'http://localhost:3001/api';
 
 type Language = 'en' | 'es';
+
+interface WeeklyRule {
+  enabled: boolean;
+  start: string;
+  end: string;
+}
+
+interface AvailabilityConfig {
+  weekly: {
+    [key: number]: WeeklyRule;
+  };
+  exceptions: {
+    [date: string]: {
+      enabled: boolean;
+      start: string;
+      end: string;
+    };
+  };
+  blocked: string[];
+}
+
+const DEFAULT_AVAILABILITY: AvailabilityConfig = {
+  weekly: {
+    1: { enabled: true, start: '09:00', end: '18:00' },
+    2: { enabled: true, start: '09:00', end: '18:00' },
+    3: { enabled: true, start: '09:00', end: '18:00' },
+    4: { enabled: true, start: '09:00', end: '18:00' },
+    5: { enabled: true, start: '09:00', end: '18:00' },
+    6: { enabled: false, start: '09:00', end: '14:00' },
+    0: { enabled: false, start: '00:00', end: '00:00' },
+  },
+  exceptions: {},
+  blocked: []
+};
 
 const translations = {
   en: {
@@ -119,7 +159,13 @@ const translations = {
     verifyData: 'Verify your data',
     confirmDetails: 'Confirm Details',
     confirmAndSend: 'Confirm and Send',
-    backToSelection: 'Back'
+    backToSelection: 'Back',
+    noAppointmentsYet: 'No appointments yet',
+    priority: 'Priority',
+    notAvailable: 'Not Available',
+    professionalUnavailable: 'The professional is absent or on vacation on this date. Please select another day.',
+    slotUnavailable: 'Slot Unavailable',
+    monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
   },
   es: {
     brand: 'MaintenCo',
@@ -199,8 +245,14 @@ const translations = {
     requestNewAppt: 'Solicitar nueva cita',
     verifyData: 'Verifica tus datos',
     confirmDetails: 'Confirmar detalles',
-    confirmAndSend: 'Confirmar y enviar',
-    backToSelection: 'Volver'
+    confirmAndSend: 'Confirm y enviar',
+    backToSelection: 'Volver',
+    noAppointmentsYet: 'Aún no tienes citas',
+    priority: 'Prioridad',
+    notAvailable: 'No Disponible',
+    professionalUnavailable: 'El profesional se encuentra ausente o de vacaciones en esta fecha. Por favor, selecciona otro día.',
+    slotUnavailable: 'Horario No Disponible',
+    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
   }
 };
 
@@ -443,10 +495,11 @@ const Navbar = ({
 
 // --- Views ---
 
-const HomeView = ({ onSchedule, services, t }: {
+const HomeView = ({ onSchedule, services, t, user }: {
   onSchedule: () => void;
   services: ServiceDef[];
   t: (k: keyof typeof translations['en']) => string;
+  user: User | null;
   key?: string
 }) => {
   return (
@@ -476,12 +529,14 @@ const HomeView = ({ onSchedule, services, t }: {
               <p className="text-slate-200 text-sm font-medium leading-relaxed max-w-[280px]">
                 {t('welcomeSub')}
               </p>
-              <button
-                onClick={onSchedule}
-                className="mt-4 flex w-fit items-center justify-center rounded-xl h-12 px-8 bg-primary text-white text-base font-bold shadow-lg shadow-primary/30 active:scale-95 transition-transform"
-              >
-                {t('requestAppt')}
-              </button>
+              {user?.role !== 'admin' && (
+                <button
+                  onClick={onSchedule}
+                  className="mt-4 flex w-fit items-center justify-center rounded-xl h-12 px-8 bg-primary text-white text-base font-bold shadow-lg shadow-primary/30 active:scale-95 transition-transform"
+                >
+                  {t('requestAppt')}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -493,7 +548,11 @@ const HomeView = ({ onSchedule, services, t }: {
           </div>
           <div className="grid grid-cols-2 gap-4">
             {services.map((service) => (
-              <div key={service.id} className="flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:border-primary/50 transition-all cursor-pointer group hover:shadow-md" onClick={onSchedule}>
+              <div
+                key={service.id}
+                className={`flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition-all group hover:shadow-md ${user?.role === 'admin' ? 'cursor-default' : 'cursor-pointer hover:border-primary/50'}`}
+                onClick={user?.role === 'admin' ? undefined : onSchedule}
+              >
                 <div className="h-56 w-full overflow-hidden relative">
                   <img src={service.img} alt={t(service.titleKey)} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   <div className="absolute top-4 left-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 backdrop-blur shadow-sm text-primary">
@@ -728,6 +787,75 @@ const RegisterView = ({ onRegister, onSwitchToLogin, t }: { onRegister: (user: U
   );
 };
 
+const AdminCalendar = ({ availability, onToggleBlock, onSelectDate, language, t }: {
+  availability: AvailabilityConfig;
+  onToggleBlock: (date: string) => void;
+  onSelectDate: (date: string) => void;
+  language: Language;
+  t: (k: any) => string;
+}) => {
+  const today = new Date();
+  const [viewDate, setViewDate] = useState(new Date());
+
+  const currentMonth = viewDate.getMonth();
+  const currentYear = viewDate.getFullYear();
+
+  const monthNamesEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthNames = language === 'es' ? translations['es'].monthNames : monthNamesEn;
+  const monthName = monthNames[currentMonth];
+  const canonicalMonthShort = monthNamesEn[currentMonth].slice(0, 3);
+  const localizedMonthShort = monthName.slice(0, 3);
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+
+  const days = [];
+  for (let i = 0; i < firstDay; i++) days.push(null);
+  for (let i = 1; i <= daysInMonth; i++) days.push(i);
+
+  return (
+    <div className="bg-slate-50 rounded-xl p-[11px] border border-slate-100 max-w-[308px] mx-auto shadow-sm">
+      <div className="flex items-center justify-between mb-2 px-1">
+        <h5 className="font-bold text-slate-800 text-[13px]">{monthName} {currentYear}</h5>
+        <div className="flex gap-0.5">
+          <button onClick={() => setViewDate(new Date(currentYear, currentMonth - 1, 1))} className="p-1 hover:bg-white rounded-md transition-colors"><Icons.ChevronLeft className="w-[13px] h-[13px]" /></button>
+          <button onClick={() => setViewDate(new Date(currentYear, currentMonth + 1, 1))} className="p-1 hover:bg-white rounded-md transition-colors"><Icons.ChevronRight className="w-[13px] h-[13px]" /></button>
+        </div>
+      </div>
+      <div className="grid grid-cols-7 gap-1 mb-1.5">
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+          <div key={i} className="text-center text-[9px] font-black text-slate-400/80 uppercase leading-none">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day, i) => {
+          if (day === null) return <div key={i} />;
+          const dateStr = `${canonicalMonthShort} ${day}`;
+          const isBlocked = availability.blocked.includes(dateStr);
+          const hasException = !!availability.exceptions[dateStr];
+
+          return (
+            <button
+              key={i}
+              onClick={() => {
+                onSelectDate(dateStr);
+                onToggleBlock(dateStr);
+              }}
+              className={`aspect-square rounded-md text-[10px] font-bold flex flex-col items-center justify-center transition-all relative ${isBlocked ? 'bg-rose-500 text-white shadow-sm shadow-rose-200' :
+                hasException ? 'bg-amber-100 text-amber-700' :
+                  'bg-white text-slate-600 hover:bg-slate-100 border border-slate-100'
+                }`}
+            >
+              {day}
+              {hasException && !isBlocked && <div className="absolute bottom-0.5 w-0.5 h-0.5 rounded-full bg-amber-500" />}
+            </button>
+          );
+        })}
+      </div>
+    </div >
+  );
+};
+
 const AdminView = ({
   appointments,
   services,
@@ -735,8 +863,10 @@ const AdminView = ({
   onDecline,
   onEdit,
   onUpdateService,
-  blockedDates,
-  onToggleBlockedDate,
+  availability,
+  onUpdateAvailability,
+  onSyncAvailability,
+  onDeleteAvailability,
   t,
   language
 }: {
@@ -746,11 +876,13 @@ const AdminView = ({
   onDecline: (id: string) => void;
   onEdit: (id: string, updated: Partial<Appointment>) => void;
   onUpdateService: (id: string, updated: Partial<ServiceDef>) => void;
-  blockedDates: string[];
-  onToggleBlockedDate: (date: string) => void;
+  availability: AvailabilityConfig;
+  onUpdateAvailability: (newConfig: AvailabilityConfig) => void;
+  onSyncAvailability: (payload: any) => Promise<void>;
+  onDeleteAvailability: (payload: any) => Promise<void>;
   t: (k: keyof typeof translations['en']) => string;
-  key?: string;
   language: Language;
+  key?: string;
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Appointment> | null>(null);
@@ -801,57 +933,272 @@ const AdminView = ({
         </div>
 
         {/* Manage Services */}
-        {/* ... existing services code ... */}
+        <div className="space-y-4">
+          <h3 className="text-slate-900 text-lg font-bold">{t('manageServices')}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {services.map((service) => (
+              <div key={service.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <service.icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">{t(service.titleKey)}</h4>
+                    <p className="text-slate-500 text-[10px] font-medium uppercase tracking-wider">{t('price')}: {service.price}</p>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">{t('updatePrice')}</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      defaultValue={service.price}
+                      onBlur={(e) => onUpdateService(service.id, { price: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 text-xs font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                      placeholder="$00/hr"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Availability Management */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-slate-900 text-lg font-bold">{t('availability' as any) || (language === 'es' ? 'Gestionar Disponibilidad' : 'Manage Availability')}</h3>
+            <h3 className="text-slate-900 text-lg font-bold">{language === 'es' ? 'Gestión de Disponibilidad Avanzada' : 'Advanced Availability Management'}</h3>
           </div>
-          <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
-            <p className="text-slate-500 text-sm">
+
+          {/* 1. Weekly Schedule */}
+          <div className="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm space-y-6">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-50">
+              <Icons.Clock className="w-5 h-5 text-primary" />
+              <h4 className="font-bold text-slate-900">{language === 'es' ? 'Horario Semanal' : 'Weekly Schedule'}</h4>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { id: 1, name: language === 'es' ? 'Lunes' : 'Monday' },
+                { id: 2, name: language === 'es' ? 'Martes' : 'Tuesday' },
+                { id: 3, name: language === 'es' ? 'Miércoles' : 'Wednesday' },
+                { id: 4, name: language === 'es' ? 'Jueves' : 'Thursday' },
+                { id: 5, name: language === 'es' ? 'Viernes' : 'Friday' },
+                { id: 6, name: language === 'es' ? 'Sábado' : 'Saturday' },
+                { id: 0, name: language === 'es' ? 'Domingo' : 'Sunday' },
+              ].map((day) => {
+                const rule = availability.weekly[day.id] || { enabled: false, start: '09:00', end: '18:00' };
+                return (
+                  <div key={day.id} className="flex items-center justify-between gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100/50">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={rule.enabled}
+                        onChange={(e) => {
+                          const newWeekly = { ...availability.weekly, [day.id]: { ...rule, enabled: e.target.checked } };
+                          onUpdateAvailability({ ...availability, weekly: newWeekly });
+                          onSyncAvailability({ type: 'weekly', dayOfWeek: day.id, enabled: e.target.checked, startTime: rule.start, endTime: rule.end });
+                        }}
+                        className="w-5 h-5 rounded-lg border-2 border-slate-200 text-primary focus:ring-primary/20 transition-all cursor-pointer"
+                      />
+                      <span className="text-sm font-bold text-slate-700">{day.name}</span>
+                    </div>
+                    {rule.enabled && (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={rule.start}
+                          onChange={(e) => {
+                            const newWeekly = { ...availability.weekly, [day.id]: { ...rule, start: e.target.value } };
+                            onUpdateAvailability({ ...availability, weekly: newWeekly });
+                            if (e.target.value.length === 5) onSyncAvailability({ type: 'weekly', dayOfWeek: day.id, enabled: rule.enabled, startTime: e.target.value, endTime: rule.end });
+                          }}
+                          className="w-16 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-center"
+                        />
+                        <span className="text-[10px] font-bold text-slate-400">to</span>
+                        <input
+                          type="text"
+                          value={rule.end}
+                          onChange={(e) => {
+                            const newWeekly = { ...availability.weekly, [day.id]: { ...rule, end: e.target.value } };
+                            onUpdateAvailability({ ...availability, weekly: newWeekly });
+                            if (e.target.value.length === 5) onSyncAvailability({ type: 'weekly', dayOfWeek: day.id, enabled: rule.enabled, startTime: rule.start, endTime: e.target.value });
+                          }}
+                          className="w-16 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-center"
+                        />
+                      </div>
+                    )}
+                    {!rule.enabled && <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">{language === 'es' ? 'Cerrado' : 'Closed'}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. Blocked Dates (Priority 1) */}
+          <div className="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-50">
+              <Icons.AlertCircle className="w-5 h-5 text-rose-500" />
+              <h4 className="font-bold text-slate-900">{language === 'es' ? 'Bloqueos y Vacaciones' : 'Blockages & Vacations'}</h4>
+            </div>
+            <p className="text-slate-500 text-xs">
               {language === 'es'
-                ? 'Selecciona una fecha para bloquearla (ej. vacaciones). Los clientes no podrán agendar citas en estas fechas.'
-                : 'Select a date to block it (e.g., vacations). Clients won\'t be able to schedule appointments on these dates.'}
+                ? 'El bloqueo total tiene prioridad máxima sobre cualquier otro horario.'
+                : 'Total blockages have maximum priority over any other schedule.'}
             </p>
+            <AdminCalendar
+              availability={availability}
+              t={t}
+              language={language}
+              onToggleBlock={(date) => {
+                const isBlocked = availability.blocked.includes(date);
+                const hasException = !!availability.exceptions[date];
+
+                if (isBlocked) {
+                  onDeleteAvailability({ type: 'blocked', specificDate: date });
+                } else {
+                  // If adding a block, also remove any exception for that day to avoid "duplicados"
+                  if (hasException) {
+                    onDeleteAvailability({ type: 'exception', specificDate: date });
+                  }
+                  onSyncAvailability({ type: 'blocked', specificDate: date });
+                }
+              }}
+              onSelectDate={(date) => {
+                const dateInp = document.getElementById('exc-date') as HTMLInputElement;
+                if (dateInp) dateInp.value = date;
+                const blockInp = document.getElementById('block-date') as HTMLInputElement;
+                if (blockInp) blockInp.value = date;
+              }}
+            />
+
             <div className="flex gap-2">
               <input
-                id="block-date-input"
+                id="block-date"
                 type="text"
-                placeholder="Mar 10"
-                className="flex-1 p-3 rounded-xl border-2 border-slate-100 text-sm font-bold focus:border-primary outline-none transition-all"
+                placeholder="Mar 15"
+                className="flex-1 p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"
               />
               <button
                 onClick={() => {
-                  const input = document.getElementById('block-date-input') as HTMLInputElement;
-                  if (input && input.value) {
-                    onToggleBlockedDate(input.value);
-                    input.value = '';
+                  const inp = document.getElementById('block-date') as HTMLInputElement;
+                  const val = inp.value.trim();
+                  if (val) {
+                    // Normalize the manually typed date
+                    const monthMap: Record<string, string> = {
+                      'ene': 'Jan', 'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'abr': 'Apr', 'apr': 'Apr',
+                      'may': 'May', 'jun': 'Jun', 'jul': 'Jul', 'ago': 'Aug', 'aug': 'Aug', 'sep': 'Sep',
+                      'oct': 'Oct', 'nov': 'Nov', 'dic': 'Dec', 'dec': 'Dec'
+                    };
+                    const parts = val.split(/\s+/);
+                    let canonicalVal = val;
+                    if (parts.length === 2) {
+                      const m = parts[0].toLowerCase().slice(0, 3);
+                      const day = parseInt(parts[1], 10).toString();
+                      const engM = monthMap[m] || parts[0];
+                      canonicalVal = `${engM.charAt(0).toUpperCase() + engM.slice(1).toLowerCase()} ${day}`;
+                    }
+
+                    if (!availability.blocked.includes(canonicalVal)) {
+                      onSyncAvailability({ type: 'blocked', specificDate: canonicalVal });
+                      inp.value = '';
+                    }
                   }
                 }}
-                className="px-6 py-3 bg-primary text-white rounded-xl text-sm font-bold active:scale-95 transition-all shadow-md shadow-primary/20"
+                className="px-6 bg-rose-500 text-white rounded-xl text-sm font-bold active:scale-95 transition-all shadow-md shadow-rose-200"
               >
-                {language === 'es' ? 'Bloquear/Desbloquear' : 'Block/Unblock'}
+                {language === 'es' ? 'Bloquear' : 'Block'}
               </button>
             </div>
 
-            {blockedDates.length > 0 && (
-              <div className="pt-4 space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                  {language === 'es' ? 'Fechas Bloqueadas' : 'Blocked Dates'}
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {blockedDates.map(date => (
-                    <div key={date} className="flex items-center gap-2 px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 text-xs font-bold">
-                      {date}
-                      <button onClick={() => onToggleBlockedDate(date)} className="hover:text-rose-800 transition-colors">
-                        <Icons.X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
+            <div className="flex flex-wrap gap-2">
+              {availability.blocked.map(date => (
+                <div key={date} className="flex items-center gap-2 px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 text-xs font-bold">
+                  {date}
+                  <button
+                    onClick={() => {
+                      onUpdateAvailability({ ...availability, blocked: availability.blocked.filter(d => d !== date) });
+                      onDeleteAvailability({ type: 'blocked', specificDate: date });
+                    }}
+                    className="hover:text-rose-800 transition-colors"
+                  >
+                    <Icons.X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 3. Exceptions (Priority 2) */}
+          <div className="bg-white rounded-[32px] p-6 border border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-slate-50">
+              <Icons.Calendar className="w-5 h-5 text-amber-500" />
+              <h4 className="font-bold text-slate-900">{language === 'es' ? 'Excepciones de Horario' : 'Schedule Exceptions'}</h4>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                <input id="exc-date" type="text" placeholder="Mar 10" className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none" />
+                <input id="exc-start" type="text" placeholder="10:00" className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none" />
+                <input id="exc-end" type="text" placeholder="13:00" className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none" />
+                <button
+                  onClick={() => {
+                    const d = (document.getElementById('exc-date') as HTMLInputElement).value;
+                    const s = (document.getElementById('exc-start') as HTMLInputElement).value;
+                    const e = (document.getElementById('exc-end') as HTMLInputElement).value;
+                    if (d && s && e) {
+                      // Normalize the date if it was typed manually
+                      const monthMap: Record<string, string> = {
+                        'ene': 'Jan', 'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'abr': 'Apr', 'apr': 'Apr',
+                        'may': 'May', 'jun': 'Jun', 'jul': 'Jul', 'ago': 'Aug', 'aug': 'Aug', 'sep': 'Sep',
+                        'oct': 'Oct', 'nov': 'Nov', 'dic': 'Dec', 'dec': 'Dec'
+                      };
+                      const parts = d.split(' ');
+                      let canonicalD = d;
+                      if (parts.length === 2) {
+                        const m = parts[0].toLowerCase().slice(0, 3);
+                        const day = parseInt(parts[1], 10).toString();
+                        const engM = monthMap[m] || parts[0];
+                        canonicalD = `${engM.charAt(0).toUpperCase() + engM.slice(1).toLowerCase()} ${day}`;
+                      }
+
+                      const newExceptions = { ...availability.exceptions, [canonicalD]: { enabled: true, start: s, end: e } };
+                      onUpdateAvailability({ ...availability, exceptions: newExceptions });
+                      onSyncAvailability({ type: 'exception', specificDate: canonicalD, enabled: true, startTime: s, endTime: e });
+
+                      // Clear inputs
+                      (document.getElementById('exc-date') as HTMLInputElement).value = '';
+                      (document.getElementById('exc-start') as HTMLInputElement).value = '';
+                      (document.getElementById('exc-end') as HTMLInputElement).value = '';
+                    }
+                  }}
+                  className="bg-amber-500 text-white rounded-xl text-sm font-bold active:scale-95 transition-all shadow-md shadow-amber-200"
+                >
+                  {language === 'es' ? 'Agregar' : 'Add'}
+                </button>
               </div>
-            )}
+
+              <div className="space-y-2">
+                {Object.entries(availability.exceptions).map(([date, rule]) => (
+                  <div key={date} className="flex items-center justify-between p-3 bg-amber-50 rounded-2xl border border-amber-100">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-amber-900">{date}</span>
+                      <span className="text-xs font-medium text-amber-700">{rule.start} - {rule.end}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const newEx = { ...availability.exceptions };
+                        delete newEx[date];
+                        onUpdateAvailability({ ...availability, exceptions: newEx });
+                        onDeleteAvailability({ type: 'exception', specificDate: date });
+                      }}
+                      className="text-amber-500 hover:text-amber-700"
+                    >
+                      <Icons.X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -875,7 +1222,7 @@ const AdminView = ({
                       req.status === 'declined' ? 'bg-rose-100 text-rose-700' :
                         'bg-slate-100 text-slate-500'
                       }`}>
-                      {req.status}
+                      {t(req.status as any)}
                     </span>
                   </div>
                 </div>
@@ -1050,7 +1397,7 @@ const AdminView = ({
           </>
         )}
       </AnimatePresence>
-    </motion.div>
+    </motion.div >
   );
 };
 
@@ -1069,7 +1416,7 @@ const UserAppointmentsView = ({
   if (!user) return null;
 
   const userAppts = appointments.filter(
-    a => a.clientName === `${user.firstName} ${user.lastName}`
+    a => a.userId === user.id
   );
 
   return (
@@ -1081,12 +1428,14 @@ const UserAppointmentsView = ({
     >
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-black text-slate-900">{t('myAppointments')}</h2>
-        <button
-          onClick={onNewAppointment}
-          className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all"
-        >
-          <Icons.PlusCircle className="w-6 h-6" />
-        </button>
+        {user.role !== 'admin' && (
+          <button
+            onClick={onNewAppointment}
+            className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all"
+          >
+            <Icons.PlusCircle className="w-6 h-6" />
+          </button>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -1098,7 +1447,7 @@ const UserAppointmentsView = ({
                   <req.icon className="w-6 h-6" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-900 text-base">{req.service}</h4>
+                  <h4 className="font-bold text-slate-900 text-base">{t(req.service as any)}</h4>
                   <p className="text-slate-500 text-xs">{req.date} {req.time}</p>
                   <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${req.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
                     req.status === 'declined' ? 'bg-rose-100 text-rose-700' :
@@ -1113,24 +1462,29 @@ const UserAppointmentsView = ({
                 {t(req.tag === 'Urgent' ? 'urgent' : 'routine')}
               </span>
             </div>
+            {req.notes && (
+              <p className="text-xs text-slate-500 bg-slate-50 p-2 rounded-xl italic">"{req.notes}"</p>
+            )}
           </div>
         ))}
 
         {userAppts.length === 0 && (
           <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-100">
             <Icons.Calendar className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-            <p className="text-slate-400 font-bold">{t('appointments') === 'Appointments' ? 'No appointments yet' : 'Aún no tienes citas'}</p>
-            <button
-              onClick={onNewAppointment}
-              className="mt-6 text-primary font-bold hover:underline"
-            >
-              {t('requestNewAppt')}
-            </button>
+            <p className="text-slate-400 font-bold">{t('noAppointmentsYet')}</p>
+            {user.role !== 'admin' && (
+              <button
+                onClick={onNewAppointment}
+                className="mt-6 text-primary font-bold hover:underline"
+              >
+                {t('requestNewAppt')}
+              </button>
+            )}
           </div>
         )}
       </div>
 
-      {userAppts.length > 0 && (
+      {userAppts.length > 0 && user.role !== 'admin' && (
         <button
           onClick={onNewAppointment}
           className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/25 active:scale-95 transition-all flex items-center justify-center gap-2"
@@ -1143,16 +1497,17 @@ const UserAppointmentsView = ({
   );
 };
 
-const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, t, language }: {
+const ScheduleView = ({ user, onSchedule, appointments, services, availability, t, language }: {
   user: User | null;
-  onSchedule: (appt: Omit<Appointment, 'id' | 'status'>) => void;
+  onSchedule: (appt: AppointmentPayload) => void;
   appointments: Appointment[];
   services: ServiceDef[];
-  blockedDates: string[];
+  availability: AvailabilityConfig;
   t: (k: keyof typeof translations['en']) => string;
   language: Language;
   key?: string;
 }) => {
+  if (user?.role === 'admin') return null;
   const today = new Date();
   const currentDay = today.getDate();
   const currentMonth = today.getMonth(); // 0-indexed
@@ -1161,36 +1516,17 @@ const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, 
   const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay(); // 0=Sun
 
   const monthNamesEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const monthNamesEs = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-  const monthNames = language === 'es' ? monthNamesEs : monthNamesEn;
+  const monthNames = language === 'es' ? translations['es'].monthNames : monthNamesEn;
 
   const monthName = monthNames[currentMonth];
-  const monthNameShort = monthName.slice(0, 3); // e.g. "Mar"
+  const localizedMonthShort = monthName.slice(0, 3);
+  const canonicalMonthShort = monthNamesEn[currentMonth].slice(0, 3);
 
   const [selectedDay, setSelectedDay] = useState(currentDay);
   const [selectedTime, setSelectedTime] = useState('09:00');
   const [selectedTag, setSelectedTag] = useState<'Routine' | 'Urgent'>('Routine');
   const [selectedService, setSelectedService] = useState(0);
   const [showConfirmation, setShowConfirmation] = useState(false);
-
-  // Determine the state of each time slot based on existing appointments
-  const getSlotStatus = (time: string): 'available' | 'pending' | 'booked' | 'past' => {
-    if (selectedDay === currentDay) {
-      const [hour, minute] = time.split(':').map(Number);
-      const now = new Date();
-      const slotTime = new Date();
-      slotTime.setHours(hour, minute, 0, 0);
-      if (slotTime < now) return 'past';
-    }
-
-    const appt = appointments.find(
-      a => a.time === time && a.date === `${monthNameShort} ${selectedDay}`
-    );
-    if (!appt) return 'available';
-    if (appt.status === 'accepted') return 'booked';
-    if (appt.status === 'pending') return 'pending';
-    return 'available';
-  };
 
   const timeSlots = [
     { time: '09:00', period: t('morning') },
@@ -1201,20 +1537,70 @@ const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, 
     { time: '17:30', period: t('evening') },
   ];
 
-  // Auto-select first available slot when day changes
-  useEffect(() => {
-    const currentStatus = getSlotStatus(selectedTime);
-    if (currentStatus !== 'available') {
-      const firstAvailable = timeSlots.find(s => getSlotStatus(s.time) === 'available');
-      if (firstAvailable) {
-        setSelectedTime(firstAvailable.time);
-      }
+  const getSlotStatus = (time: string) => {
+    const dayStr = `${canonicalMonthShort} ${selectedDay}`;
+    const dayStrLower = dayStr.toLowerCase();
+
+    // Level 1: Blocked (Vacation) - Case Insensitive
+    if (availability.blocked.some(d => d.toLowerCase() === dayStrLower)) return 'blocked';
+
+    // Get range for this day
+    const dayDate = new Date(currentYear, currentMonth, selectedDay);
+    const dayOfWeek = dayDate.getDay();
+    let range = availability.weekly[dayOfWeek];
+
+    // Level 2: Exceptions (Overrides weekly) - Case Insensitive
+    const excKey = Object.keys(availability.exceptions).find(k => k.toLowerCase() === dayStrLower);
+    if (excKey) {
+      range = availability.exceptions[excKey];
     }
-  }, [selectedDay, appointments]);
+
+    if (!range || !range.enabled) return 'blocked';
+
+    // Check if within range
+    const [h, m] = time.split(':').map(Number);
+    const [rsH, rsM] = range.start.split(':').map(Number);
+    const [reH, reM] = range.end.split(':').map(Number);
+
+    const timeVal = h * 60 + m;
+    const startVal = rsH * 60 + rsM;
+    const endVal = reH * 60 + reM;
+
+    if (timeVal < startVal || timeVal >= endVal) return 'past';
+
+    // Check if in past (for current day)
+    const now = new Date();
+    const isToday = selectedDay === now.getDate() && currentMonth === now.getMonth();
+    if (isToday) {
+      const currentTimeVal = now.getHours() * 60 + now.getMinutes();
+      if (timeVal <= currentTimeVal) return 'past';
+    }
+
+    // Level 3: Existing appointments
+    const exists = appointments.find(a => a.date === dayStr && a.time === time);
+    if (exists) {
+      return exists.status === 'accepted' ? 'booked' : 'pending';
+    }
+    return 'available';
+  };
+
+  useEffect(() => {
+    // Auto-select first available slot if current isn't available
+    if (getSlotStatus(selectedTime) !== 'available') {
+      const available = timeSlots.find(s => getSlotStatus(s.time) === 'available');
+      if (available) setSelectedTime(available.time);
+    }
+  }, [selectedDay, appointments, availability]);
 
   const SelectedIcon = services[selectedService].icon;
-  const isBlockedDate = blockedDates.includes(`${monthNameShort} ${selectedDay}`);
-  const isSelectedSlotAvailable = !isBlockedDate && getSlotStatus(selectedTime) === 'available';
+  const dayStr = `${canonicalMonthShort} ${selectedDay}`;
+  const isBlockedDate = availability.blocked.includes(dayStr);
+  const dayOfWeek = new Date(currentYear, currentMonth, selectedDay).getDay();
+  const weeklyRule = availability.weekly[dayOfWeek];
+  const exceptionRule = availability.exceptions[dayStr];
+  const isDateClosed = isBlockedDate || (exceptionRule ? !exceptionRule.enabled : !weeklyRule?.enabled);
+
+  const isSelectedSlotAvailable = getSlotStatus(selectedTime) === 'available';
 
   return (
     <motion.div
@@ -1223,7 +1609,7 @@ const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, 
       exit={{ opacity: 0, y: -20 }}
       className="pb-24 bg-[#f6f6f8] min-h-screen"
     >
-
+      <Header title={t('schedule')} onBack={() => { }} t={t} />
 
       {/* Service selector */}
       <div className="px-4 mb-4">
@@ -1236,7 +1622,7 @@ const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, 
                 key={i}
                 onClick={() => setSelectedService(i)}
                 className={`flex flex-col items-center justify-center gap-2 py-3 rounded-2xl border-2 transition-all
-                  ${selectedService === i
+                ${selectedService === i
                     ? 'bg-primary/10 border-primary text-primary'
                     : 'bg-white border-slate-200 text-slate-500 hover:border-primary/50'}`}
               >
@@ -1250,12 +1636,12 @@ const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, 
 
       {/* Routine / Urgent toggle */}
       <div className="px-4 mb-4">
-        <h3 className="text-lg font-bold tracking-tight mb-3">{t('urgent')} / {t('routine')}</h3>
+        <h3 className="text-lg font-bold tracking-tight mb-3">{t('priority')}</h3>
         <div className="flex gap-3">
           <button
             onClick={() => setSelectedTag('Routine')}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border-2 text-sm font-bold transition-all
-              ${selectedTag === 'Routine'
+            ${selectedTag === 'Routine'
                 ? 'bg-blue-50 border-blue-400 text-blue-600'
                 : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'}`}
           >
@@ -1265,7 +1651,7 @@ const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, 
           <button
             onClick={() => setSelectedTag('Urgent')}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border-2 text-sm font-bold transition-all
-              ${selectedTag === 'Urgent'
+            ${selectedTag === 'Urgent'
                 ? 'bg-amber-50 border-amber-400 text-amber-600'
                 : 'bg-white border-slate-200 text-slate-500 hover:border-amber-300'}`}
           >
@@ -1289,23 +1675,34 @@ const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, 
           </div>
 
           <div className="grid grid-cols-7 gap-2">
-            {/* Empty cells for the weekday offset of the 1st */}
             {Array.from({ length: firstDayOfWeek }).map((_, i) => (
               <div key={`empty-${i}`} />
             ))}
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+              const dateObj = new Date(currentYear, currentMonth, day);
               const isSelected = selectedDay === day;
               const isPast = day < currentDay;
+
+              const dayStrLong = `${canonicalMonthShort} ${day}`;
+              const isBlocked = availability.blocked.includes(dayStrLong);
+              const dOfWeek = dateObj.getDay();
+              const wRule = availability.weekly[dOfWeek];
+              const eRule = availability.exceptions[dayStrLong];
+              const isClosed = isBlocked || (eRule ? !eRule.enabled : !wRule?.enabled);
+
               return (
                 <button
                   key={day}
                   disabled={isPast}
                   onClick={() => setSelectedDay(day)}
-                  className={`h-10 flex items-center justify-center rounded-full text-sm font-medium transition-all
-                    ${isSelected ? 'bg-primary text-white font-bold shadow-lg shadow-primary/30' :
+                  className={`h-10 flex flex-col items-center justify-center rounded-full text-sm font-medium transition-all relative
+                  ${isSelected ? 'bg-primary text-white font-bold shadow-lg shadow-primary/30' :
                       isPast ? 'text-slate-300 cursor-not-allowed' : 'hover:bg-slate-100 text-slate-700'}`}
                 >
                   {day}
+                  {isClosed && !isPast && (
+                    <div className="absolute -bottom-1 w-1 h-1 bg-rose-400 rounded-full" />
+                  )}
                 </button>
               );
             })}
@@ -1318,16 +1715,14 @@ const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, 
           <h3 className="text-lg font-bold tracking-tight">{t('selectTime')}</h3>
         </div>
 
-        {isBlockedDate ? (
+        {isDateClosed ? (
           <div className="p-12 text-center bg-rose-50 rounded-[32px] border-2 border-rose-100 border-dashed">
             <Icons.Calendar className="w-12 h-12 text-rose-300 mx-auto mb-4" />
             <h4 className="text-rose-900 font-bold mb-2">
-              {language === 'es' ? 'No Disponible' : 'Not Available'}
+              {t('notAvailable')}
             </h4>
             <p className="text-rose-600 text-xs font-medium leading-relaxed">
-              {language === 'es'
-                ? 'El profesional se encuentra ausente o de vacaciones en esta fecha. Por favor, selecciona otro día.'
-                : 'The professional is absent or on vacation on this date. Please select another day.'}
+              {t('professionalUnavailable')}
             </p>
           </div>
         ) : (
@@ -1381,7 +1776,7 @@ const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, 
           </div>
           <div className="text-right">
             <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t('schedule')}</span>
-            <p className="text-sm font-bold">{monthNameShort} {selectedDay} • {selectedTime}</p>
+            <p className="text-sm font-bold">{localizedMonthShort} {selectedDay} • {selectedTime}</p>
             <p className="text-xs text-slate-500">{t(services[selectedService].titleKey)}</p>
           </div>
         </div>
@@ -1389,11 +1784,11 @@ const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, 
           disabled={!isSelectedSlotAvailable}
           onClick={() => setShowConfirmation(true)}
           className={`w-full font-bold py-4 rounded-2xl transition-all
-            ${isSelectedSlotAvailable
+          ${isSelectedSlotAvailable
               ? 'bg-primary text-white shadow-xl shadow-primary/25 active:scale-95'
               : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
         >
-          {isSelectedSlotAvailable ? t('confirmAppt') : (language === 'es' ? 'Horario No Disponible' : 'Slot Unavailable')}
+          {isSelectedSlotAvailable ? t('confirmAppt') : t('slotUnavailable')}
         </button>
       </div>
 
@@ -1429,7 +1824,7 @@ const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, 
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('schedule')}</span>
-                    <span className="text-slate-900 font-bold">{monthNameShort} {selectedDay} • {selectedTime}</span>
+                    <span className="text-slate-900 font-bold">{localizedMonthShort} {selectedDay} • {selectedTime}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('status')}</span>
@@ -1440,20 +1835,23 @@ const ScheduleView = ({ user, onSchedule, appointments, services, blockedDates, 
                   </div>
                   <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                     <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('price')}</span>
-                    <span className="text-primary text-xl font-black">{services[selectedService].price}</span>
+                    <span className="text-primary text-xl font-black">{services[selectedService]?.price}</span>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-3">
                   <button
-                    onClick={() => onSchedule({
-                      clientName: user ? `${user.firstName} ${user.lastName}` : 'Guest',
-                      service: t(services[selectedService].titleKey),
-                      date: `${monthNameShort} ${selectedDay}`,
-                      time: selectedTime,
-                      tag: selectedTag,
-                      icon: services[selectedService].icon
-                    })}
+                    onClick={() => {
+                      const selectedServiceDef = services[Object.keys(services)[selectedService]];
+                      onSchedule({
+                        service: selectedServiceDef.titleKey,
+                        serviceIndex: selectedService.toString(),
+                        date: `${canonicalMonthShort} ${selectedDay}`,
+                        time: selectedTime,
+                        tag: selectedTag,
+                      });
+                      setShowConfirmation(false);
+                    }}
                     className="w-full bg-primary text-white font-bold py-5 rounded-2xl shadow-xl shadow-primary/25 active:scale-95 transition-all"
                   >
                     {t('confirmAndSend')}
@@ -1487,7 +1885,18 @@ export default function App() {
   const [view, setView] = useState<View>('home');
   const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('mainten_user');
-    return saved ? JSON.parse(saved) : null;
+    if (!saved) return null;
+    try {
+      const parsed = JSON.parse(saved);
+      // Force re-login if id is missing (prevents persistence errors)
+      if (!parsed.id && parsed.email !== ADMIN_EMAIL) {
+        localStorage.removeItem('mainten_user');
+        return null;
+      }
+      return parsed;
+    } catch (e) {
+      return null;
+    }
   });
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [language, setLanguage] = useState<Language>(() => {
@@ -1509,17 +1918,92 @@ export default function App() {
     }
   });
 
-  const [registeredUsers, setRegisteredUsers] = useState<User[]>(() => {
-    const saved = localStorage.getItem('mainten_all_users');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [registeredUsers, setRegisteredUsers] = useState<User[]>([]);
 
-  const [blockedDates, setBlockedDates] = useState<string[]>(() => {
-    const saved = localStorage.getItem('mainten_blocked_dates');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [availability, setAvailability] = useState<AvailabilityConfig>(DEFAULT_AVAILABILITY);
 
   const [authError, setAuthError] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    try {
+      const [apptsRes, availRes] = await Promise.all([
+        fetch(`${API_URL}/appointments${user?.role === 'admin' ? '?role=admin' : `?userId=${user?.id}`}`),
+        fetch(`${API_URL}/availability`)
+      ]);
+
+      if (apptsRes.ok) {
+        const data = await apptsRes.json();
+        const mappedData = data.map((appt: any) => {
+          const serviceDef = services.find(s => s.titleKey === appt.service);
+          return {
+            ...appt,
+            icon: serviceDef?.icon || Icons.Wrench
+          };
+        });
+        setAppointments(mappedData);
+      }
+
+      if (availRes.ok) {
+        const data = await availRes.json();
+        const mergedWeekly = { ...DEFAULT_AVAILABILITY.weekly };
+        if (data.weekly) {
+          Object.entries(data.weekly).forEach(([key, val]) => {
+            mergedWeekly[parseInt(key)] = val as WeeklyRule;
+          });
+        }
+
+        const monthMap: Record<string, string> = {
+          'ene': 'Jan', 'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'abr': 'Apr', 'apr': 'Apr',
+          'may': 'May', 'jun': 'Jun', 'jul': 'Jul', 'ago': 'Aug', 'aug': 'Aug', 'sep': 'Sep',
+          'oct': 'Oct', 'nov': 'Nov', 'dic': 'Dec', 'dec': 'Dec'
+        };
+
+        const normalizeDateStr = (s: string) => {
+          if (!s) return s;
+          const parts = s.trim().split(/\s+/);
+          if (parts.length === 2) {
+            const m = parts[0].toLowerCase().slice(0, 3);
+            const day = parseInt(parts[1], 10).toString();
+            const engMonth = monthMap[m] || parts[0];
+            const capitalizedMonth = engMonth.charAt(0).toUpperCase() + engMonth.slice(1).toLowerCase();
+            return `${capitalizedMonth} ${day}`;
+          }
+          return s.charAt(0).toUpperCase() + s.slice(1);
+        };
+
+        const normalizedBlocked = Array.from(new Set((data.blocked || []).map(normalizeDateStr)));
+        const normalizedExceptions: Record<string, any> = {};
+        if (data.exceptions) {
+          Object.entries(data.exceptions).forEach(([date, rule]) => {
+            normalizedExceptions[normalizeDateStr(date)] = rule;
+          });
+        }
+
+        setAvailability({
+          ...DEFAULT_AVAILABILITY,
+          ...data,
+          weekly: mergedWeekly,
+          blocked: normalizedBlocked,
+          exceptions: normalizedExceptions
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  // Fetch initial data
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    } else {
+      // Still fetch availability for the schedule view if not logged in
+      fetch(`${API_URL}/availability`)
+        .then(res => res.json())
+        .then(data => setAvailability(data))
+        .catch(err => console.error('Error fetching availability:', err));
+    }
+  }, [user, services]); // Added services to dependency array to ensure icons are mapped correctly
 
   // Redirect non-admin users away from admin view
   useEffect(() => {
@@ -1538,76 +2022,127 @@ export default function App() {
     localStorage.setItem('mainten_lang', newLang);
   };
 
-  const addAppointment = (appt: Omit<Appointment, 'id' | 'status'>) => {
-    const newAppt: Appointment = {
-      ...appt,
-      clientName: user ? `${user.firstName} ${user.lastName}` : appt.clientName,
-      id: Math.random().toString(36).substr(2, 9),
-      status: 'pending'
-    };
-    setAppointments([newAppt, ...appointments]);
-    setView('admin'); // Navigate to admin to see it
+  const addAppointment = async (appt: AppointmentPayload) => {
+    if (!user) {
+      setView('register');
+      return;
+    }
+
+    const selectedServiceDef = services[appt.serviceIndex];
+    if (!selectedServiceDef) {
+      console.error('Selected service not found');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/appointments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          clientName: `${user.firstName} ${user.lastName}`,
+          service: selectedServiceDef.titleKey, // Store titleKey as service string
+          serviceIndex: appt.serviceIndex, // Store index for icon retrieval
+          date: appt.date,
+          time: appt.time,
+          tag: appt.tag,
+        })
+      });
+
+      if (response.ok) {
+        const newAppt = await response.json();
+        setAppointments([newAppt, ...appointments]);
+        setView(user.role === 'admin' ? 'admin' : 'my-appointments');
+      } else {
+        const errorData = await response.json();
+        alert(`Error al crear la cita: ${errorData.error || 'Desconocido'}`);
+      }
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      alert('Error de conexión con el servidor. Por favor, revisa que el backend esté ejecutándose.');
+    }
   };
 
-  const handleRegister = (userData: User) => {
-    const role = userData.email === ADMIN_EMAIL ? 'admin' : 'user';
-    const userWithRole = { ...userData, role } as User;
-    setRegisteredUsers([...registeredUsers, userWithRole]);
-    localStorage.setItem('mainten_all_users', JSON.stringify([...registeredUsers, userWithRole]));
-    setUser(userWithRole);
-    localStorage.setItem('mainten_user', JSON.stringify(userWithRole));
-    setView('schedule');
+  const handleRegister = async (userData: User) => {
+    try {
+      const response = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+
+      if (response.ok) {
+        const newUser = await response.json();
+        setUser(newUser);
+        localStorage.setItem('mainten_user', JSON.stringify(newUser));
+        setView('schedule');
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('Error during registration:', error);
+    }
   };
 
-  const toggleBlockedDate = (date: string) => {
-    const newBlocked = blockedDates.includes(date)
-      ? blockedDates.filter(d => d !== date)
-      : [...blockedDates, date];
-    setBlockedDates(newBlocked);
-    localStorage.setItem('mainten_blocked_dates', JSON.stringify(newBlocked));
+  const updateAvailability = async (newConfig: AvailabilityConfig) => {
+    // This is more complex because AdminUI sends the whole object
+    // For now, I'll just update state and assume the admin triggers individual API calls or 
+    // I should implement a full object sync. 
+    // To keep it simple and fulfill the requirement of persistence:
+    setAvailability(newConfig);
+    // Note: In a real production app, we would sync each change individually to the DB.
   };
 
-  const handleLogin = (email: string, password?: string) => {
+  // Helper for admin to sync availability rule
+  const syncAvailabilityRule = async (payload: any) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/availability`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) await fetchData();
+    } catch (error) {
+      console.error('Error syncing availability:', error);
+    }
+  };
+
+  const deleteAvailabilityRule = async (payload: any) => {
+    try {
+      const res = await fetch(`${API_URL}/admin/availability`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) await fetchData();
+    } catch (error) {
+      console.error('Error deleting availability:', error);
+    }
+  };
+
+  const handleLogin = async (email: string, password?: string) => {
     setAuthError(null);
-    const isAdmin = email.toLowerCase() === ADMIN_EMAIL;
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
 
-    // Check if user exists in registered list
-    const foundUser = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-    if (foundUser) {
-      if (foundUser.password === password) {
-        const updatedUser = { ...foundUser, role: isAdmin ? 'admin' : 'user' } as User;
-        setUser(updatedUser);
-        localStorage.setItem('mainten_user', JSON.stringify(updatedUser));
-        setView(isAdmin ? 'admin' : 'schedule');
+      if (response.ok) {
+        const loggedUser = await response.json();
+        setUser(loggedUser);
+        localStorage.setItem('mainten_user', JSON.stringify(loggedUser));
+        setView(loggedUser.role === 'admin' ? 'admin' : 'home');
       } else {
-        const msg = t('wrongPassword');
-        setAuthError(msg);
-        alert(msg);
+        const data = await response.json();
+        setAuthError(data.error);
+        alert(data.error);
       }
-      return;
+    } catch (error) {
+      console.error('Error during login:', error);
     }
-
-    // Special case for admin login without prior registration (if no registered admin)
-    if (isAdmin) {
-      if (password === 'Contraseña') {
-        const adminUser: User = { firstName: 'Admin', lastName: 'MaintenCo', email, phone: '', role: 'admin', password };
-        setRegisteredUsers([...registeredUsers, adminUser]);
-        localStorage.setItem('mainten_all_users', JSON.stringify([...registeredUsers, adminUser]));
-        setUser(adminUser);
-        localStorage.setItem('mainten_user', JSON.stringify(adminUser));
-        setView('admin');
-      } else {
-        const msg = t('wrongPassword');
-        setAuthError(msg);
-        alert(msg);
-      }
-      return;
-    }
-
-    const msg = t('userNotFound');
-    setAuthError(msg);
-    alert(msg);
   };
 
   const handleLogout = () => {
@@ -1619,14 +2154,30 @@ export default function App() {
   const handleScheduleClick = () => {
     setAuthError(null);
     if (user) {
-      setView('schedule');
+      if (user.role === 'admin') {
+        setView('my-appointments');
+      } else {
+        setView('schedule');
+      }
     } else {
       setView('register');
     }
   };
 
-  const updateAppointmentStatus = (id: string, status: 'accepted' | 'declined') => {
-    setAppointments(appointments.map(a => a.id === id ? { ...a, status } : a));
+  const updateAppointmentStatus = async (id: string, status: 'accepted' | 'declined') => {
+    try {
+      const response = await fetch(`${API_URL}/appointments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+
+      if (response.ok) {
+        setAppointments(appointments.map(a => a.id === id ? { ...a, status } : a));
+      }
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+    }
   };
 
   const handleEditAppointment = (id: string, updated: Partial<Appointment>) => {
@@ -1657,7 +2208,7 @@ export default function App() {
       <main className="flex-1">
         <div className="max-w-7xl mx-auto">
           <AnimatePresence mode="wait">
-            {view === 'home' && <HomeView key="home" onSchedule={handleScheduleClick} services={services} t={t} />}
+            {view === 'home' && <HomeView key="home" onSchedule={handleScheduleClick} services={services} t={t} user={user} />}
             {view === 'register' && (
               <RegisterView
                 key="register"
@@ -1693,8 +2244,10 @@ export default function App() {
                 onEdit={handleEditAppointment}
                 services={services}
                 onUpdateService={handleUpdateService}
-                blockedDates={blockedDates}
-                onToggleBlockedDate={toggleBlockedDate}
+                availability={availability}
+                onUpdateAvailability={updateAvailability}
+                onSyncAvailability={syncAvailabilityRule}
+                onDeleteAvailability={deleteAvailabilityRule}
                 t={t}
                 language={language}
               />
@@ -1706,7 +2259,7 @@ export default function App() {
                 onSchedule={addAppointment}
                 appointments={appointments}
                 services={services}
-                blockedDates={blockedDates}
+                availability={availability}
                 t={t}
                 language={language}
               />

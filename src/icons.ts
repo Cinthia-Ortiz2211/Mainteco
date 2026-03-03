@@ -37,7 +37,11 @@ import {
   Twitter,
   Instagram,
   Pencil,
-  Edit3
+  Edit3,
+  Star,
+  DollarSign,
+  Award,
+  Quote
 } from 'lucide-react';
 
 export {
@@ -79,5 +83,9 @@ export {
   Twitter,
   Instagram,
   Pencil,
-  Edit3
+  Edit3,
+  Star,
+  DollarSign,
+  Award,
+  Quote
 };

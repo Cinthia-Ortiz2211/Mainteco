@@ -107,13 +107,18 @@ const translations = {
     notes: 'Notes',
     manageServices: 'Manage Services',
     price: 'Price',
+    service: 'Service',
     updatePrice: 'Update Price',
     userNotFound: 'no se encuentra registrado',
     wrongPassword: 'Contraseña incorrecta',
     password: 'Password',
     alreadyRegistered: 'Email already registered',
     myAppointments: 'My Appointments',
-    requestNewAppt: 'Request New Appointment'
+    requestNewAppt: 'Request New Appointment',
+    verifyData: 'Verify your data',
+    confirmDetails: 'Confirm Details',
+    confirmAndSend: 'Confirm and Send',
+    backToSelection: 'Back'
   },
   es: {
     brand: 'MaintenCo',
@@ -182,13 +187,18 @@ const translations = {
     notes: 'Notas',
     manageServices: 'Gestionar Servicios',
     price: 'Precio',
+    service: 'Servicio',
     updatePrice: 'Actualizar Precio',
     userNotFound: 'no se encuentra registrado',
     wrongPassword: 'Contraseña incorrecta',
     password: 'Contraseña',
     alreadyRegistered: 'Correo ya registrado',
     myAppointments: 'Mis Citas',
-    requestNewAppt: 'Solicitar nueva cita'
+    requestNewAppt: 'Solicitar nueva cita',
+    verifyData: 'Verifica tus datos',
+    confirmDetails: 'Confirmar detalles',
+    confirmAndSend: 'Confirmar y enviar',
+    backToSelection: 'Volver'
   }
 };
 
@@ -1107,7 +1117,8 @@ const UserAppointmentsView = ({
   );
 };
 
-const ScheduleView = ({ onSchedule, appointments, services, t }: {
+const ScheduleView = ({ user, onSchedule, appointments, services, t }: {
+  user: User | null;
   onSchedule: (appt: Omit<Appointment, 'id' | 'status'>) => void;
   appointments: Appointment[];
   services: ServiceDef[];
@@ -1128,6 +1139,7 @@ const ScheduleView = ({ onSchedule, appointments, services, t }: {
   const [selectedTime, setSelectedTime] = useState('09:00 AM');
   const [selectedTag, setSelectedTag] = useState<'Routine' | 'Urgent'>('Routine');
   const [selectedService, setSelectedService] = useState(0);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Determine the state of each time slot based on existing appointments
   const getSlotStatus = (time: string): 'available' | 'pending' | 'booked' => {
@@ -1301,19 +1313,86 @@ const ScheduleView = ({ onSchedule, appointments, services, t }: {
           </div>
         </div>
         <button
-          onClick={() => onSchedule({
-            clientName: 'Example Client',
-            service: t(services[selectedService].titleKey),
-            date: `${monthNameShort} ${selectedDay}`,
-            time: selectedTime,
-            tag: selectedTag,
-            icon: services[selectedService].icon
-          })}
+          onClick={() => setShowConfirmation(true)}
           className="w-full bg-primary text-white font-bold py-4 rounded-2xl shadow-xl shadow-primary/25 active:scale-95 transition-all"
         >
           {t('confirmAppt')}
         </button>
       </div>
+
+      <AnimatePresence>
+        {showConfirmation && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowConfirmation(false)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200]"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[40px] p-8 z-[201] shadow-2xl"
+            >
+              <div className="flex flex-col gap-8">
+                <div className="text-center space-y-2">
+                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-4">
+                    <Icons.CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900">{t('verifyData')}</h3>
+                  <p className="text-slate-500 font-medium">{t('confirmDetails')}</p>
+                </div>
+
+                <div className="bg-slate-50 rounded-3xl p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('service')}</span>
+                    <span className="text-slate-900 font-bold">{t(services[selectedService].titleKey)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('schedule')}</span>
+                    <span className="text-slate-900 font-bold">{monthNameShort} {selectedDay} • {selectedTime}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('status')}</span>
+                    <span className={`font-bold flex items-center gap-1 ${selectedTag === 'Urgent' ? 'text-amber-500' : 'text-blue-500'}`}>
+                      {selectedTag === 'Urgent' ? <Icons.Zap className="w-4 h-4" /> : <Icons.Clock className="w-4 h-4" />}
+                      {selectedTag === 'Urgent' ? t('urgent') : t('routine')}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                    <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('price')}</span>
+                    <span className="text-primary text-xl font-black">{services[selectedService].price}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => onSchedule({
+                      clientName: user ? `${user.firstName} ${user.lastName}` : 'Guest',
+                      service: t(services[selectedService].titleKey),
+                      date: `${monthNameShort} ${selectedDay}`,
+                      time: selectedTime,
+                      tag: selectedTag,
+                      icon: services[selectedService].icon
+                    })}
+                    className="w-full bg-primary text-white font-bold py-5 rounded-2xl shadow-xl shadow-primary/25 active:scale-95 transition-all"
+                  >
+                    {t('confirmAndSend')}
+                  </button>
+                  <button
+                    onClick={() => setShowConfirmation(false)}
+                    className="w-full bg-slate-100 text-slate-600 font-bold py-4 rounded-2xl active:scale-95 transition-all"
+                  >
+                    {t('backToSelection')}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
@@ -1523,6 +1602,7 @@ export default function App() {
             {view === 'schedule' && (
               <ScheduleView
                 key="schedule"
+                user={user}
                 onSchedule={addAppointment}
                 appointments={appointments}
                 services={services}

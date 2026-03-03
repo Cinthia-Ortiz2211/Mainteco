@@ -30,6 +30,7 @@ interface User {
   lastName: string;
   email: string;
   phone: string;
+  password?: string;
   role: 'user' | 'admin';
 }
 
@@ -106,7 +107,11 @@ const translations = {
     notes: 'Notes',
     manageServices: 'Manage Services',
     price: 'Price',
-    updatePrice: 'Update Price'
+    updatePrice: 'Update Price',
+    userNotFound: 'User not registered',
+    wrongPassword: 'Incorrect password',
+    password: 'Password',
+    alreadyRegistered: 'Email already registered'
   },
   es: {
     brand: 'MaintenCo',
@@ -175,7 +180,11 @@ const translations = {
     notes: 'Notas',
     manageServices: 'Gestionar Servicios',
     price: 'Precio',
-    updatePrice: 'Actualizar Precio'
+    updatePrice: 'Actualizar Precio',
+    userNotFound: 'Usuario no registrado',
+    wrongPassword: 'Contraseña incorrecta',
+    password: 'Contraseña',
+    alreadyRegistered: 'Correo ya registrado'
   }
 };
 
@@ -481,13 +490,15 @@ const HomeView = ({ onSchedule, services, t }: {
   );
 };
 
-const LoginView = ({ onLogin, onSwitchToRegister, t }: { onLogin: (email: string) => void; onSwitchToRegister: () => void; t: (k: keyof typeof translations['en']) => string; key?: string }) => {
+const LoginView = ({ onLogin, onSwitchToRegister, t }: { onLogin: (email: string, password: string) => void; onSwitchToRegister: () => void; t: (k: keyof typeof translations['en']) => string; error?: string; key?: string }) => {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      onLogin(email);
+    if (email && password) {
+      onLogin(email, password);
     }
   };
 
@@ -524,6 +535,20 @@ const LoginView = ({ onLogin, onSwitchToRegister, t }: { onLogin: (email: string
             />
           </div>
 
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-slate-700 ml-1">{t('password')}</label>
+            <input
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              placeholder="••••••••"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          {error && <p className="text-rose-500 text-xs font-bold px-1">{error}</p>}
+
           <button
             type="submit"
             className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/25 flex items-center justify-center gap-2 transition-transform active:scale-95"
@@ -552,11 +577,13 @@ const RegisterView = ({ onRegister, onSwitchToLogin, t }: { onRegister: (user: U
     lastName: '',
     email: '',
     phone: '',
+    password: '',
+    role: 'user'
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.firstName && formData.lastName && formData.email) {
+    if (formData.firstName && formData.lastName && formData.email && formData.password) {
       onRegister(formData);
     } else {
       alert(t('required'));
@@ -635,14 +662,18 @@ const RegisterView = ({ onRegister, onSwitchToLogin, t }: { onRegister: (user: U
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-slate-700 ml-1">{t('phone')}</label>
+            <div className="flex justify-between items-center px-1">
+              <label className="text-sm font-semibold text-slate-700">{t('password')}</label>
+              <span className="text-[10px] font-bold text-rose-500 uppercase tracking-tighter">{t('required')}</span>
+            </div>
             <div className="relative">
               <input
                 className="w-full px-4 py-3.5 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="+1 (555) 000-0000"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="••••••••"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
               />
             </div>
           </div>
@@ -708,12 +739,7 @@ const AdminView = ({
     }
   };
 
-  const servicesList = [
-    { label: t('plumbing'), icon: Icons.Droplets },
-    { label: t('electrical'), icon: Icons.Zap },
-    { label: t('carpentry'), icon: Icons.Hammer },
-    { label: t('painting'), icon: Icons.Paintbrush },
-  ];
+
 
   return (
     <motion.div
@@ -877,17 +903,17 @@ const AdminView = ({
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('selectService')}</label>
                     <div className="grid grid-cols-2 gap-2">
-                      {servicesList.map((s, i) => (
+                      {services.map((s, i) => (
                         <button
                           key={i}
-                          onClick={() => setEditForm({ ...editForm, service: s.label, icon: s.icon })}
-                          className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${editForm.service === s.label
+                          onClick={() => setEditForm({ ...editForm, service: t(s.titleKey), icon: s.icon })}
+                          className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${editForm.service === t(s.titleKey)
                             ? 'border-primary bg-primary/5 text-primary'
                             : 'border-slate-100 text-slate-600 hover:border-slate-200'
                             }`}
                         >
                           <s.icon className="w-5 h-5" />
-                          <span className="text-sm font-bold">{s.label}</span>
+                          <span className="text-sm font-bold">{t(s.titleKey)}</span>
                         </button>
                       ))}
                     </div>
@@ -1223,6 +1249,12 @@ export default function App() {
     }
   });
 
+  const [registeredUsers, setRegisteredUsers] = useState<User[]>(() => {
+    const saved = localStorage.getItem('mainten_all_users');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [authError, setAuthError] = useState<string | null>(null);
+
   // Redirect non-admin users away from admin view
   useEffect(() => {
     if (user?.role !== 'admin' && view === 'admin') {
@@ -1254,37 +1286,44 @@ export default function App() {
   const handleRegister = (userData: User) => {
     const role = userData.email === ADMIN_EMAIL ? 'admin' : 'user';
     const userWithRole = { ...userData, role } as User;
+    setRegisteredUsers([...registeredUsers, userWithRole]);
+    localStorage.setItem('mainten_all_users', JSON.stringify([...registeredUsers, userWithRole]));
     setUser(userWithRole);
     localStorage.setItem('mainten_user', JSON.stringify(userWithRole));
     setView('schedule');
   };
 
-  const handleLogin = (email: string) => {
+  const handleLogin = (email: string, password?: string) => {
+    setAuthError(null);
     const isAdmin = email.toLowerCase() === ADMIN_EMAIL;
-    // Try to retrieve a previously registered user
-    const savedUser = localStorage.getItem('mainten_user');
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      if (parsed.email === email) {
-        const updatedUser = { ...parsed, role: isAdmin ? 'admin' : 'user' } as User;
+
+    // Check if user exists in registered list
+    const foundUser = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (foundUser) {
+      if (foundUser.password === password) {
+        const updatedUser = { ...foundUser, role: isAdmin ? 'admin' : 'user' } as User;
         setUser(updatedUser);
         localStorage.setItem('mainten_user', JSON.stringify(updatedUser));
         setView(isAdmin ? 'admin' : 'schedule');
-        return;
+      } else {
+        setAuthError(t('wrongPassword'));
       }
+      return;
     }
-    // Admin login even without prior registration
+
+    // Special case for admin login without prior registration (if no registered admin)
     if (isAdmin) {
-      const adminUser: User = { firstName: 'Admin', lastName: 'MaintenCo', email, phone: '', role: 'admin' };
+      const adminUser: User = { firstName: 'Admin', lastName: 'MaintenCo', email, phone: '', role: 'admin', password };
+      setRegisteredUsers([...registeredUsers, adminUser]);
+      localStorage.setItem('mainten_all_users', JSON.stringify([...registeredUsers, adminUser]));
       setUser(adminUser);
       localStorage.setItem('mainten_user', JSON.stringify(adminUser));
       setView('admin');
       return;
     }
-    // Regular user fallback
-    const newUser: User = { firstName: 'Returning', lastName: 'User', email, phone: '', role: 'user' };
-    setUser(newUser);
-    setView('schedule');
+
+    setAuthError(t('userNotFound'));
   };
 
   const handleLogout = () => {
@@ -1294,6 +1333,7 @@ export default function App() {
   };
 
   const handleScheduleClick = () => {
+    setAuthError(null);
     if (user) {
       setView('schedule');
     } else {
@@ -1346,6 +1386,7 @@ export default function App() {
                 key="login"
                 onLogin={handleLogin}
                 onSwitchToRegister={() => setView('register')}
+                error={authError || undefined}
                 t={t}
               />
             )}

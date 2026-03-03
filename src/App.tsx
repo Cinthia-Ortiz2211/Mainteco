@@ -109,6 +109,7 @@ const translations = {
     price: 'Price',
     service: 'Service',
     updatePrice: 'Update Price',
+    past: 'Past',
     userNotFound: 'no se encuentra registrado',
     wrongPassword: 'Contraseña incorrecta',
     password: 'Password',
@@ -189,6 +190,7 @@ const translations = {
     price: 'Precio',
     service: 'Servicio',
     updatePrice: 'Actualizar Precio',
+    past: 'Pasado',
     userNotFound: 'no se encuentra registrado',
     wrongPassword: 'Contraseña incorrecta',
     password: 'Contraseña',
@@ -1117,12 +1119,13 @@ const UserAppointmentsView = ({
   );
 };
 
-const ScheduleView = ({ user, onSchedule, appointments, services, t }: {
+const ScheduleView = ({ user, onSchedule, appointments, services, t, language }: {
   user: User | null;
   onSchedule: (appt: Omit<Appointment, 'id' | 'status'>) => void;
   appointments: Appointment[];
   services: ServiceDef[];
   t: (k: keyof typeof translations['en']) => string;
+  language: Language;
   key?: string;
 }) => {
   const today = new Date();
@@ -1131,37 +1134,61 @@ const ScheduleView = ({ user, onSchedule, appointments, services, t }: {
   const currentYear = today.getFullYear();
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay(); // 0=Sun
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  const monthNamesEn = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthNamesEs = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const monthNames = language === 'es' ? monthNamesEs : monthNamesEn;
+
   const monthName = monthNames[currentMonth];
   const monthNameShort = monthName.slice(0, 3); // e.g. "Mar"
 
   const [selectedDay, setSelectedDay] = useState(currentDay);
-  const [selectedTime, setSelectedTime] = useState('09:00 AM');
+  const [selectedTime, setSelectedTime] = useState('09:00');
   const [selectedTag, setSelectedTag] = useState<'Routine' | 'Urgent'>('Routine');
   const [selectedService, setSelectedService] = useState(0);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Determine the state of each time slot based on existing appointments
-  const getSlotStatus = (time: string): 'available' | 'pending' | 'booked' => {
+  const getSlotStatus = (time: string): 'available' | 'pending' | 'booked' | 'past' => {
+    if (selectedDay === currentDay) {
+      const [hour, minute] = time.split(':').map(Number);
+      const now = new Date();
+      const slotTime = new Date();
+      slotTime.setHours(hour, minute, 0, 0);
+      if (slotTime < now) return 'past';
+    }
+
     const appt = appointments.find(
       a => a.time === time && a.date === `${monthNameShort} ${selectedDay}`
     );
     if (!appt) return 'available';
     if (appt.status === 'accepted') return 'booked';
     if (appt.status === 'pending') return 'pending';
-    return 'available'; // declined slots become available again
+    return 'available';
   };
 
   const timeSlots = [
-    { time: '09:00 AM', period: t('morning') },
-    { time: '10:30 AM', period: t('morning') },
-    { time: '01:00 PM', period: t('afternoon') },
-    { time: '02:30 PM', period: t('afternoon') },
-    { time: '04:00 PM', period: t('evening') },
-    { time: '05:30 PM', period: t('evening') },
+    { time: '09:00', period: t('morning') },
+    { time: '10:30', period: t('morning') },
+    { time: '13:00', period: t('afternoon') },
+    { time: '14:30', period: t('afternoon') },
+    { time: '16:00', period: t('evening') },
+    { time: '17:30', period: t('evening') },
   ];
 
+  // Auto-select first available slot when day changes
+  useEffect(() => {
+    const currentStatus = getSlotStatus(selectedTime);
+    if (currentStatus !== 'available') {
+      const firstAvailable = timeSlots.find(s => getSlotStatus(s.time) === 'available');
+      if (firstAvailable) {
+        setSelectedTime(firstAvailable.time);
+      }
+    }
+  }, [selectedDay, appointments]);
+
   const SelectedIcon = services[selectedService].icon;
+  const isSelectedSlotAvailable = getSlotStatus(selectedTime) === 'available';
 
   return (
     <motion.div
@@ -1268,13 +1295,14 @@ const ScheduleView = ({ user, onSchedule, appointments, services, t }: {
             const isSelected = selectedTime === slot.time;
             const isBooked = slotStatus === 'booked';
             const isPending = slotStatus === 'pending';
+            const isPastSlot = slotStatus === 'past';
             return (
               <button
                 key={i}
-                disabled={isBooked || isPending}
+                disabled={isBooked || isPending || isPastSlot}
                 onClick={() => setSelectedTime(slot.time)}
                 className={`flex flex-col items-center justify-center py-4 rounded-2xl transition-all border-2
-                  ${isBooked
+                  ${isBooked || isPastSlot
                     ? 'bg-rose-50 border-rose-200 cursor-not-allowed opacity-70'
                     : isPending
                       ? 'bg-amber-50 border-amber-300 cursor-not-allowed'
@@ -1282,14 +1310,16 @@ const ScheduleView = ({ user, onSchedule, appointments, services, t }: {
                         ? 'bg-primary/10 border-primary text-primary'
                         : 'bg-white border-slate-200 hover:border-primary/50'}`}
               >
-                <span className={`text-sm font-bold ${isBooked ? 'text-rose-400' : isPending ? 'text-amber-500' : ''
+                <span className={`text-sm font-bold ${isBooked || isPastSlot ? 'text-rose-400' : isPending ? 'text-amber-500' : ''
                   }`}>{slot.time}</span>
                 <span className="text-[10px] font-medium opacity-70">
                   {isBooked
                     ? t('booked')
                     : isPending
                       ? t('pending')
-                      : slot.period}
+                      : isPastSlot
+                        ? t('past')
+                        : slot.period}
                 </span>
               </button>
             );
@@ -1313,10 +1343,14 @@ const ScheduleView = ({ user, onSchedule, appointments, services, t }: {
           </div>
         </div>
         <button
+          disabled={!isSelectedSlotAvailable}
           onClick={() => setShowConfirmation(true)}
-          className="w-full bg-primary text-white font-bold py-4 rounded-2xl shadow-xl shadow-primary/25 active:scale-95 transition-all"
+          className={`w-full font-bold py-4 rounded-2xl transition-all
+            ${isSelectedSlotAvailable
+              ? 'bg-primary text-white shadow-xl shadow-primary/25 active:scale-95'
+              : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
         >
-          {t('confirmAppt')}
+          {isSelectedSlotAvailable ? t('confirmAppt') : (language === 'es' ? 'Horario No Disponible' : 'Slot Unavailable')}
         </button>
       </div>
 
@@ -1607,6 +1641,7 @@ export default function App() {
                 appointments={appointments}
                 services={services}
                 t={t}
+                language={language}
               />
             )}
           </AnimatePresence>

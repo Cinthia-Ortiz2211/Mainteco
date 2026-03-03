@@ -255,10 +255,12 @@ const Navbar = ({
     { id: 'admin', label: t('admin'), icon: Icons.LayoutDashboard },
   ];
 
-  // Show admin only to admin-role users
-  const menuItems = user?.role === 'admin'
-    ? allMenuItems
-    : allMenuItems.filter(item => item.id !== 'admin');
+  // Show admin only to admin-role users; hide register if logged in
+  const menuItems = allMenuItems.filter(item => {
+    if (item.id === 'admin') return user?.role === 'admin';
+    if (item.id === 'register') return !user;
+    return true;
+  });
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md border-b border-slate-200 z-[100]">

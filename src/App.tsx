@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import * as Icons from './icons';
 
 // --- Types ---
-type View = 'home' | 'register' | 'admin' | 'schedule' | 'login';
+type View = 'home' | 'register' | 'admin' | 'schedule' | 'login' | 'my-appointments';
 
 interface Appointment {
   id: string;
@@ -108,10 +108,12 @@ const translations = {
     manageServices: 'Manage Services',
     price: 'Price',
     updatePrice: 'Update Price',
-    userNotFound: 'User not registered',
-    wrongPassword: 'Incorrect password',
+    userNotFound: 'no se encuentra registrado',
+    wrongPassword: 'Contraseña incorrecta',
     password: 'Password',
-    alreadyRegistered: 'Email already registered'
+    alreadyRegistered: 'Email already registered',
+    myAppointments: 'My Appointments',
+    requestNewAppt: 'Request New Appointment'
   },
   es: {
     brand: 'MaintenCo',
@@ -184,7 +186,9 @@ const translations = {
     userNotFound: 'no se encuentra registrado',
     wrongPassword: 'Contraseña incorrecta',
     password: 'Contraseña',
-    alreadyRegistered: 'Correo ya registrado'
+    alreadyRegistered: 'Correo ya registrado',
+    myAppointments: 'Mis Citas',
+    requestNewAppt: 'Solicitar nueva cita'
   }
 };
 
@@ -235,7 +239,7 @@ const Navbar = ({
   const [profileOpen, setProfileOpen] = useState(false);
 
   const handleNavClick = (v: View) => {
-    if (v === 'schedule' && !user) {
+    if ((v === 'schedule' || v === 'my-appointments') && !user) {
       setView('register');
     } else {
       setView(v);
@@ -246,7 +250,7 @@ const Navbar = ({
 
   const allMenuItems: { id: View; label: string; icon: React.FC<any> }[] = [
     { id: 'home', label: t('home'), icon: Icons.HomeIcon },
-    { id: 'schedule', label: t('schedule'), icon: Icons.Calendar },
+    { id: 'my-appointments', label: t('schedule'), icon: Icons.Calendar },
     { id: 'register', label: t('register'), icon: Icons.PlusCircle },
     { id: 'admin', label: t('admin'), icon: Icons.LayoutDashboard },
   ];
@@ -323,7 +327,7 @@ const Navbar = ({
                         {/* Actions */}
                         <div className="p-2">
                           <button
-                            onClick={() => handleNavClick('schedule')}
+                            onClick={() => handleNavClick('my-appointments')}
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-all text-sm font-medium"
                           >
                             <Icons.Calendar className="w-4 h-4 text-primary" />
@@ -1012,6 +1016,95 @@ const AdminView = ({
   );
 };
 
+const UserAppointmentsView = ({
+  user,
+  appointments,
+  onNewAppointment,
+  t
+}: {
+  user: User | null;
+  appointments: Appointment[];
+  onNewAppointment: () => void;
+  t: (k: keyof typeof translations['en']) => string;
+  key?: string;
+}) => {
+  if (!user) return null;
+
+  const userAppts = appointments.filter(
+    a => a.clientName === `${user.firstName} ${user.lastName}`
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="p-4 pb-24 space-y-6"
+    >
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-black text-slate-900">{t('myAppointments')}</h2>
+        <button
+          onClick={onNewAppointment}
+          className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all"
+        >
+          <Icons.PlusCircle className="w-6 h-6" />
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        {userAppts.map((req) => (
+          <div key={req.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col gap-4">
+            <div className="flex justify-between items-start">
+              <div className="flex gap-3">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <req.icon className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-base">{req.service}</h4>
+                  <p className="text-slate-500 text-xs">{req.date} {req.time}</p>
+                  <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${req.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
+                    req.status === 'declined' ? 'bg-rose-100 text-rose-700' :
+                      'bg-slate-100 text-slate-500'
+                    }`}>
+                    {t(req.status as any)}
+                  </span>
+                </div>
+              </div>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${req.tag === 'Urgent' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-600'
+                }`}>
+                {t(req.tag === 'Urgent' ? 'urgent' : 'routine')}
+              </span>
+            </div>
+          </div>
+        ))}
+
+        {userAppts.length === 0 && (
+          <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-100">
+            <Icons.Calendar className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+            <p className="text-slate-400 font-bold">{t('appointments') === 'Appointments' ? 'No appointments yet' : 'Aún no tienes citas'}</p>
+            <button
+              onClick={onNewAppointment}
+              className="mt-6 text-primary font-bold hover:underline"
+            >
+              {t('requestNewAppt')}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {userAppts.length > 0 && (
+        <button
+          onClick={onNewAppointment}
+          className="w-full py-4 bg-primary text-white font-bold rounded-2xl shadow-xl shadow-primary/25 active:scale-95 transition-all flex items-center justify-center gap-2"
+        >
+          <Icons.PlusCircle className="w-5 h-5" />
+          {t('requestNewAppt')}
+        </button>
+      )}
+    </motion.div>
+  );
+};
+
 const ScheduleView = ({ onSchedule, appointments, services, t }: {
   onSchedule: (appt: Omit<Appointment, 'id' | 'status'>) => void;
   appointments: Appointment[];
@@ -1401,6 +1494,15 @@ export default function App() {
                 onLogin={handleLogin}
                 onSwitchToRegister={() => setView('register')}
                 error={authError || undefined}
+                t={t}
+              />
+            )}
+            {view === 'my-appointments' && (
+              <UserAppointmentsView
+                key="my-appointments"
+                user={user}
+                appointments={appointments}
+                onNewAppointment={() => setView('schedule')}
                 t={t}
               />
             )}

@@ -1190,6 +1190,13 @@ const ScheduleView = ({ onSchedule, appointments, services, t }: {
 
 // --- Main App ---
 
+const DEFAULT_SERVICES: ServiceDef[] = [
+  { id: '1', titleKey: 'plumbing', price: '$89/hr', img: "/images/plumbing.png", icon: Icons.Droplets },
+  { id: '2', titleKey: 'carpentry', price: '$75/hr', img: "/images/carpentry.png", icon: Icons.Hammer },
+  { id: '3', titleKey: 'painting', price: '$65/hr', img: "/images/painting.png", icon: Icons.Paintbrush },
+  { id: '4', titleKey: 'electrical', price: '$95/hr', img: "/images/electrical.png", icon: Icons.Zap },
+];
+
 export default function App() {
   const [view, setView] = useState<View>('home');
   const [user, setUser] = useState<User | null>(() => {
@@ -1202,12 +1209,19 @@ export default function App() {
     return (saved as Language) || 'en';
   });
 
-  const [services, setServices] = useState<ServiceDef[]>([
-    { id: '1', titleKey: 'plumbing', price: '$89/hr', img: "/images/plumbing.png", icon: Icons.Droplets },
-    { id: '2', titleKey: 'carpentry', price: '$75/hr', img: "/images/carpentry.png", icon: Icons.Hammer },
-    { id: '3', titleKey: 'painting', price: '$65/hr', img: "/images/painting.png", icon: Icons.Paintbrush },
-    { id: '4', titleKey: 'electrical', price: '$95/hr', img: "/images/electrical.png", icon: Icons.Zap },
-  ]);
+  const [services, setServices] = useState<ServiceDef[]>(() => {
+    const saved = localStorage.getItem('mainten_services');
+    if (!saved) return DEFAULT_SERVICES;
+    try {
+      const parsed = JSON.parse(saved) as Partial<ServiceDef>[];
+      return DEFAULT_SERVICES.map(def => {
+        const match = parsed.find(p => p.id === def.id);
+        return match ? { ...def, price: match.price || def.price } : def;
+      });
+    } catch (e) {
+      return DEFAULT_SERVICES;
+    }
+  });
 
   // Redirect non-admin users away from admin view
   useEffect(() => {
@@ -1296,7 +1310,11 @@ export default function App() {
   };
 
   const handleUpdateService = (id: string, updated: Partial<ServiceDef>) => {
-    setServices(services.map(s => s.id === id ? { ...s, ...updated } : s));
+    const nextServices = services.map(s => s.id === id ? { ...s, ...updated } : s);
+    setServices(nextServices);
+    // Persist only the data that can be serialized (id and price)
+    const toSave = nextServices.map(({ id, price }) => ({ id, price }));
+    localStorage.setItem('mainten_services', JSON.stringify(toSave));
   };
 
   return (

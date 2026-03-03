@@ -219,6 +219,7 @@ const Navbar = ({
   onLogout,
   language,
   onLanguageSwitch,
+  appointments,
   t
 }: {
   currentView: View;
@@ -227,6 +228,7 @@ const Navbar = ({
   onLogout: () => void;
   language: Language;
   onLanguageSwitch: () => void;
+  appointments: Appointment[];
   t: (k: keyof typeof translations['en']) => string;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -325,7 +327,14 @@ const Navbar = ({
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-all text-sm font-medium"
                           >
                             <Icons.Calendar className="w-4 h-4 text-primary" />
-                            <span>{t('schedule')}</span>
+                            <div className="flex flex-col items-start min-w-0">
+                              <span>{t('schedule')}</span>
+                              {user && appointments.filter(a => a.clientName === `${user.firstName} ${user.lastName}`).length > 0 && (
+                                <span className="text-[10px] text-primary font-bold truncate w-full">
+                                  {appointments.filter(a => a.clientName === `${user.firstName} ${user.lastName}`)[0].service} - {appointments.filter(a => a.clientName === `${user.firstName} ${user.lastName}`)[0].date}
+                                </span>
+                              )}
+                            </div>
                           </button>
                           <div className="my-1 border-t border-slate-100" />
                           <button
@@ -1370,6 +1379,7 @@ export default function App() {
         onLogout={handleLogout}
         language={language}
         onLanguageSwitch={handleLanguageSwitch}
+        appointments={appointments}
         t={t}
       />
 

@@ -269,7 +269,7 @@ const translations = {
     requestNewAppt: 'Solicitar nueva cita',
     verifyData: 'Verifica tus datos',
     confirmDetails: 'Confirmar detalles',
-    confirmAndSend: 'Confirm y enviar',
+    confirmAndSend: 'Confirmar y enviar',
     backToSelection: 'Volver',
     noAppointmentsYet: 'Aún no tienes citas',
     priority: 'Prioridad',
@@ -2038,10 +2038,10 @@ const ScheduleView = ({ user, onSchedule, appointments, services, availability, 
 // --- Main App ---
 
 const DEFAULT_SERVICES: ServiceDef[] = [
-  { id: '1', titleKey: 'plumbing', price: '$89/hr', img: "/images/plumbing.png", icon: Icons.Droplets },
-  { id: '2', titleKey: 'carpentry', price: '$75/hr', img: "/images/carpentry.png", icon: Icons.Hammer },
-  { id: '3', titleKey: 'painting', price: '$65/hr', img: "/images/painting.png", icon: Icons.Paintbrush },
-  { id: '4', titleKey: 'electrical', price: '$95/hr', img: "/images/electrical.png", icon: Icons.Zap },
+  { id: '1', titleKey: 'plumbing', price: '$15.000 ARS/hora', img: "/images/plumbing.png", icon: Icons.Droplets },
+  { id: '2', titleKey: 'carpentry', price: '$14.000 ARS/hora', img: "/images/carpentry.png", icon: Icons.Hammer },
+  { id: '3', titleKey: 'painting', price: '$12.000 ARS/hora', img: "/images/painting.png", icon: Icons.Paintbrush },
+  { id: '4', titleKey: 'electrical', price: '$18.000 ARS/hora', img: "/images/electrical.png", icon: Icons.Zap },
 ];
 
 export default function App() {
@@ -2404,18 +2404,29 @@ export default function App() {
   };
 
   const updateAppointmentStatus = async (id: string, status: 'accepted' | 'declined') => {
+    // Look up the service price for the email notification
+    const appt = appointments.find(a => a.id === id);
+    const serviceDef = appt ? services.find(s => s.titleKey === appt.service) : null;
+    const servicePrice = serviceDef ? serviceDef.price : '';
+
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 2000);
       const response = await fetch(`${API_URL}/appointments/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status, servicePrice }),
+        signal: controller.signal
       });
+      clearTimeout(timeout);
 
       if (response.ok) {
         setAppointments(appointments.map(a => a.id === id ? { ...a, status } : a));
       }
     } catch (error) {
       console.error('Error updating appointment status:', error);
+      // Fallback: update appointment status locally when backend is unavailable
+      setAppointments(appointments.map(a => a.id === id ? { ...a, status } : a));
     }
   };
 

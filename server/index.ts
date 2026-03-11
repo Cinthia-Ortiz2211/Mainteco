@@ -1,13 +1,136 @@
 import express from 'express';
 import cors from 'cors';
 import { randomUUID } from 'crypto';
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
 import db from './db.js';
+
+dotenv.config();
 
 const app = express();
 const port = 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// --- Email Setup ---
+
+const EMAIL_USER = process.env.EMAIL_USER || '';
+const EMAIL_PASS = process.env.EMAIL_PASS || '';
+
+let transporter: nodemailer.Transporter | null = null;
+
+if (EMAIL_USER && EMAIL_PASS) {
+    transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: EMAIL_USER,
+            pass: EMAIL_PASS,
+        },
+    });
+    console.log(`📧 Email configurado con: ${EMAIL_USER}`);
+} else {
+    console.log('⚠️ No se configuraron credenciales de email (EMAIL_USER / EMAIL_PASS). Los emails se mostrarán en la consola.');
+}
+
+// Service name mapping for emails
+const serviceNames: Record<string, string> = {
+    plumbing: 'Plomería',
+    electrical: 'Electricidad',
+    carpentry: 'Carpintería',
+    painting: 'Pintura',
+};
+
+async function sendConfirmationEmail(
+    toEmail: string,
+    clientName: string,
+    service: string,
+    date: string,
+    time: string,
+    price: string
+) {
+    const serviceName = serviceNames[service] || service;
+
+    const htmlContent = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc; border-radius: 16px; overflow: hidden;">
+      <div style="background: linear-gradient(135deg, #1d4ed8, #2563eb); padding: 32px 24px; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 800;">🔧 MaintenCo</h1>
+        <p style="color: rgba(255,255,255,0.85); margin: 8px 0 0; font-size: 14px;">Mantenimiento profesional para tu hogar</p>
+      </div>
+      
+      <div style="padding: 32px 24px;">
+        <h2 style="color: #0f172a; font-size: 22px; margin: 0 0 8px;">¡Tu cita fue confirmada!</h2>
+        <p style="color: #64748b; font-size: 15px; margin: 0 0 24px; line-height: 1.5;">
+          Hola <strong>${clientName}</strong>, te confirmamos que tu cita de mantenimiento fue aceptada. A continuación te dejamos los detalles:
+        </p>
+
+        <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">
+          <div style="display: flex; padding: 16px 20px; border-bottom: 1px solid #f1f5f9;">
+            <span style="color: #94a3b8; font-size: 13px; font-weight: 600; min-width: 120px; text-transform: uppercase; letter-spacing: 0.05em;">Servicio</span>
+            <span style="color: #0f172a; font-size: 15px; font-weight: 700;">${serviceName}</span>
+          </div>
+          <div style="display: flex; padding: 16px 20px; border-bottom: 1px solid #f1f5f9;">
+            <span style="color: #94a3b8; font-size: 13px; font-weight: 600; min-width: 120px; text-transform: uppercase; letter-spacing: 0.05em;">Fecha</span>
+            <span style="color: #0f172a; font-size: 15px; font-weight: 700;">📅 ${date}</span>
+          </div>
+          <div style="display: flex; padding: 16px 20px; border-bottom: 1px solid #f1f5f9;">
+            <span style="color: #94a3b8; font-size: 13px; font-weight: 600; min-width: 120px; text-transform: uppercase; letter-spacing: 0.05em;">Horario</span>
+            <span style="color: #0f172a; font-size: 15px; font-weight: 700;">🕐 ${time}</span>
+          </div>
+          <div style="display: flex; padding: 16px 20px; background: #f0fdf4;">
+            <span style="color: #94a3b8; font-size: 13px; font-weight: 600; min-width: 120px; text-transform: uppercase; letter-spacing: 0.05em;">Precio est.</span>
+            <span style="color: #16a34a; font-size: 17px; font-weight: 800;">${price}</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; padding: 16px 20px; background: #eff6ff; border-radius: 12px; border-left: 4px solid #2563eb;">
+          <p style="color: #1e40af; font-size: 14px; margin: 0; line-height: 1.5;">
+            <strong>📲 Próximo paso:</strong> Un técnico verificado se presentará en tu domicilio en la fecha y hora indicadas. Si necesitás reprogramar, contactanos por WhatsApp.
+          </p>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 13px; margin: 24px 0 0; text-align: center; line-height: 1.4;">
+          El precio es estimado y puede variar según el alcance del trabajo.<br>
+          El profesional te confirmará el monto final antes de comenzar.
+        </p>
+      </div>
+
+      <div style="background: #0f172a; padding: 20px 24px; text-align: center;">
+        <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+          © 2026 MaintenCo — Mar del Plata, Argentina<br>
+          Soluciones de mantenimiento para tu hogar
+        </p>
+      </div>
+    </div>
+  `;
+
+    const mailOptions = {
+        from: `"MaintenCo" <${EMAIL_USER || 'noreply@maintenco.com'}>`,
+        to: toEmail,
+        subject: `✅ Cita confirmada — ${serviceName} el ${date}`,
+        html: htmlContent,
+    };
+
+    if (transporter) {
+        try {
+            const info = await transporter.sendMail(mailOptions);
+            console.log(`✅ Email enviado a ${toEmail}: ${info.messageId}`);
+        } catch (error) {
+            console.error(`❌ Error enviando email a ${toEmail}:`, error);
+        }
+    } else {
+        console.log('\n📧 ═══════════════════════════════════════════════');
+        console.log('   EMAIL DE CONFIRMACIÓN (modo consola)');
+        console.log('═══════════════════════════════════════════════════');
+        console.log(`   Para: ${toEmail}`);
+        console.log(`   Asunto: ${mailOptions.subject}`);
+        console.log(`   Cliente: ${clientName}`);
+        console.log(`   Servicio: ${serviceName}`);
+        console.log(`   Fecha: ${date} | Hora: ${time}`);
+        console.log(`   Precio: ${price}`);
+        console.log('═══════════════════════════════════════════════════\n');
+    }
+}
 
 // --- Auth Endpoints ---
 
@@ -60,7 +183,6 @@ app.get('/api/appointments', (req, res) => {
     if (role === 'admin') {
         appointments = db.prepare(query).all();
     } else if (userId) {
-        // Find user email to support legacy email-based appointments
         const user = db.prepare('SELECT email FROM users WHERE id = ?').get(userId) as any;
         const email = user?.email;
 
@@ -98,15 +220,43 @@ app.post('/api/appointments', (req, res) => {
     }
 });
 
-app.patch('/api/appointments/:id', (req, res) => {
+app.patch('/api/appointments/:id', async (req, res) => {
     const { id } = req.params;
-    const { status, notes } = req.body;
+    const { status, notes, servicePrice } = req.body;
 
     if (status) {
         db.prepare('UPDATE appointments SET status = ? WHERE id = ?').run(status, id);
     }
     if (notes !== undefined) {
         db.prepare('UPDATE appointments SET notes = ? WHERE id = ?').run(notes, id);
+    }
+
+    // Send confirmation email when appointment is accepted
+    if (status === 'accepted') {
+        try {
+            const appt = db.prepare(`
+                SELECT a.*, u.email, u.firstName, u.lastName
+                FROM appointments a
+                LEFT JOIN users u ON a.userId = u.id
+                WHERE a.id = ?
+            `).get(id) as any;
+
+            if (appt && appt.email) {
+                const clientName = `${appt.firstName} ${appt.lastName}`;
+                const price = servicePrice || 'A confirmar por el técnico';
+
+                sendConfirmationEmail(
+                    appt.email,
+                    clientName,
+                    appt.service,
+                    appt.date,
+                    appt.time,
+                    price
+                );
+            }
+        } catch (emailError) {
+            console.error('Error preparing confirmation email:', emailError);
+        }
     }
 
     res.json({ success: true });

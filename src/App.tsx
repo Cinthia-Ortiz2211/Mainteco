@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as Icons from './icons';
 
@@ -129,7 +129,7 @@ const translations = {
     painting: 'Painting',
     plumbingDesc: 'Plumbing — fast and safe solutions for pipes and leaks.',
     electricalDesc: 'Electrical — installation, repair, and fault diagnosis.',
-    carpentryDesc: 'General repair — from minor fixes to complete home maintenance.',
+    carpentryDesc: 'Carpentry — furniture repair, woodwork, and custom installations.',
     paintingDesc: 'Painting — interior and exterior renovation with professional finishes.',
     serviceSuccess: 'Appointment created successfully',
     estimatedDuration: 'Estimated duration',
@@ -151,8 +151,8 @@ const translations = {
     service: 'Service',
     updatePrice: 'Update Price',
     past: 'Past',
-    userNotFound: 'no se encuentra registrado',
-    wrongPassword: 'Contraseña incorrecta',
+    userNotFound: 'is not registered',
+    wrongPassword: 'Incorrect password',
     password: 'Password',
     alreadyRegistered: 'Email already registered',
     myAppointments: 'My Appointments',
@@ -239,7 +239,7 @@ const translations = {
     painting: 'Pintura',
     plumbingDesc: 'Plomería — soluciones rápidas y seguras para cañerías y filtraciones.',
     electricalDesc: 'Electricidad — instalación, reparación y diagnóstico de fallas.',
-    carpentryDesc: 'Reparación general — desde arreglos menores hasta mantenimiento completo del hogar.',
+    carpentryDesc: 'Carpintería — reparación de muebles, trabajos en madera e instalaciones a medida.',
     paintingDesc: 'Pintura — renovación interior y exterior con acabados profesionales.',
     serviceSuccess: 'Cita creada exitosamente',
     estimatedDuration: 'Duración estimada',
@@ -318,9 +318,9 @@ const Header = ({ title, onBack, showActions = true, t }: { title: string; onBac
     </div>
     {showActions && (
       <div className="flex items-center gap-3">
-        <button className="p-2 rounded-full hover:bg-slate-100 transition-colors">
-          <Icons.Bell className="w-5 h-5 text-slate-600" />
-        </button>
+        <div className="p-2 text-slate-300">
+          <Icons.Bell className="w-5 h-5" />
+        </div>
       </div>
     )}
   </header>
@@ -410,7 +410,7 @@ const Navbar = ({
                 </div>
               </button>
 
-              <Icons.Bell className="w-5 h-5 text-slate-600 cursor-pointer" />
+              <Icons.Bell className="w-5 h-5 text-slate-300 cursor-default" />
               {user ? (
                 <div className="relative">
                   <button
@@ -469,7 +469,13 @@ const Navbar = ({
                   )}
                 </div>
               ) : (
-                <Icons.UserCircle className="w-5 h-5 text-slate-600 cursor-pointer" onClick={() => handleNavClick('register')} />
+                <button
+                  onClick={() => handleNavClick('login')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-all"
+                >
+                  <Icons.UserCircle className="w-4 h-4" />
+                  {t('signin')}
+                </button>
               )}
             </div>
           </div>
@@ -610,7 +616,7 @@ const HomeView = ({ onSchedule, services, t, user }: {
               <h2 className="text-slate-900 text-2xl md:text-3xl font-black tracking-tight">{t('ourServices')}</h2>
               <p className="text-slate-500 text-sm md:text-base mt-1">{t('servicesSubtitle')}</p>
             </div>
-            <button className="text-primary text-sm font-semibold hover:underline">{t('viewAll')}</button>
+            <button onClick={onSchedule} className="text-primary text-sm font-semibold hover:underline">{t('viewAll')}</button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {services.map((service) => (
@@ -707,7 +713,7 @@ const HomeView = ({ onSchedule, services, t, user }: {
   );
 };
 
-const LoginView = ({ onLogin, onSwitchToRegister, t }: { onLogin: (email: string, password: string) => void; onSwitchToRegister: () => void; t: (k: keyof typeof translations['en']) => string; error?: string; key?: string }) => {
+const LoginView = ({ onLogin, onSwitchToRegister, onGoHome, t }: { onLogin: (email: string, password: string) => void; onSwitchToRegister: () => void; onGoHome: () => void; t: (k: keyof typeof translations['en']) => string; error?: string; key?: string }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -727,7 +733,7 @@ const LoginView = ({ onLogin, onSwitchToRegister, t }: { onLogin: (email: string
       className="pb-24 min-h-screen bg-white"
     >
       <div className="flex items-center px-4 pt-6 pb-2 justify-between">
-        <button className="p-2 rounded-full hover:bg-slate-100 transition-colors" onClick={onSwitchToRegister}>
+        <button className="p-2 rounded-full hover:bg-slate-100 transition-colors" onClick={onGoHome}>
           <Icons.ArrowLeft className="w-6 h-6" />
         </button>
         <h2 className="text-lg font-bold leading-tight tracking-tight flex-1 text-center pr-10">{t('signin')}</h2>
@@ -788,7 +794,7 @@ const LoginView = ({ onLogin, onSwitchToRegister, t }: { onLogin: (email: string
   );
 };
 
-const RegisterView = ({ onRegister, onSwitchToLogin, t }: { onRegister: (user: User) => void; onSwitchToLogin: () => void; t: (k: keyof typeof translations['en']) => string; key?: string }) => {
+const RegisterView = ({ onRegister, onSwitchToLogin, onGoHome, t }: { onRegister: (user: User) => void; onSwitchToLogin: () => void; onGoHome: () => void; t: (k: keyof typeof translations['en']) => string; key?: string }) => {
   const [formData, setFormData] = useState<User>({
     firstName: '',
     lastName: '',
@@ -815,7 +821,7 @@ const RegisterView = ({ onRegister, onSwitchToLogin, t }: { onRegister: (user: U
       className="pb-24 min-h-screen bg-white"
     >
       <div className="flex items-center px-4 pt-6 pb-2 justify-between">
-        <button className="p-2 rounded-full hover:bg-slate-100 transition-colors" onClick={() => window.history.back()}>
+        <button className="p-2 rounded-full hover:bg-slate-100 transition-colors" onClick={onGoHome}>
           <Icons.ArrowLeft className="w-6 h-6" />
         </button>
         <h2 className="text-lg font-bold leading-tight tracking-tight flex-1 text-center pr-10">{t('register')}</h2>
@@ -835,7 +841,7 @@ const RegisterView = ({ onRegister, onSwitchToLogin, t }: { onRegister: (user: U
             <div className="relative">
               <input
                 className="w-full px-4 py-3.5 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="example"
+                placeholder="Juan"
                 type="text"
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
@@ -852,7 +858,7 @@ const RegisterView = ({ onRegister, onSwitchToLogin, t }: { onRegister: (user: U
             <div className="relative">
               <input
                 className="w-full px-4 py-3.5 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="example"
+                placeholder="Pérez"
                 type="text"
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
@@ -895,12 +901,27 @@ const RegisterView = ({ onRegister, onSwitchToLogin, t }: { onRegister: (user: U
             </div>
           </div>
 
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-center px-1">
+              <label className="text-sm font-semibold text-slate-700">{t('phone')}</label>
+            </div>
+            <div className="relative">
+              <input
+                className="w-full px-4 py-3.5 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                placeholder="+54 11 1234-5678"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </div>
+          </div>
+
           <div className="mt-10 mb-20">
             <button
               type="submit"
               className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/25 flex items-center justify-center gap-2 transition-transform active:scale-95"
             >
-              <span>{t('next')}: {t('schedule')}</span>
+              <span>{t('register')}</span>
               <Icons.ChevronRight className="w-5 h-5" />
             </button>
             <div className="mt-6 text-center">
@@ -986,7 +1007,7 @@ const AdminCalendar = ({ availability, onToggleBlock, onSelectDate, language, t 
         </div>
       </div>
       <div className="grid grid-cols-7 gap-1 mb-1.5">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+        {(language === 'es' ? ['D', 'L', 'M', 'M', 'J', 'V', 'S'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S']).map((d, i) => (
           <div key={i} className="text-center text-[9px] font-black text-slate-400/80 uppercase leading-none">{d}</div>
         ))}
       </div>
@@ -1080,17 +1101,13 @@ const AdminView = ({
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: t('pendingAppts'), val: pendingCount.toString(), trend: '+5%', up: true },
-            { label: t('accepted'), val: acceptedCount.toString(), trend: '-2%', up: false },
-            { label: t('declined'), val: declinedCount.toString(), trend: '0%', up: null },
+            { label: t('pendingAppts'), val: pendingCount.toString(), color: 'text-slate-900' },
+            { label: t('accepted'), val: acceptedCount.toString(), color: 'text-emerald-600' },
+            { label: t('declined'), val: declinedCount.toString(), color: 'text-rose-600' },
           ].map((stat, i) => (
             <div key={i} className="flex flex-col gap-1 rounded-xl p-4 bg-white shadow-sm border border-slate-100">
               <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">{stat.label}</p>
-              <p className="text-slate-900 text-2xl font-bold leading-tight">{stat.val}</p>
-              <div className={`flex items-center gap-1 text-xs font-semibold ${stat.up === true ? 'text-emerald-600' : stat.up === false ? 'text-rose-600' : 'text-slate-400'}`}>
-                {stat.up === true ? <Icons.TrendingUp className="w-3 h-3" /> : stat.up === false ? <Icons.TrendingDown className="w-3 h-3" /> : <Icons.Minus className="w-3 h-3" />}
-                <span>{stat.trend}</span>
-              </div>
+              <p className={`text-2xl font-bold leading-tight ${stat.color}`}>{stat.val}</p>
             </div>
           ))}
         </div>
@@ -1660,9 +1677,10 @@ const UserAppointmentsView = ({
   );
 };
 
-const ScheduleView = ({ user, onSchedule, appointments, services, availability, t, language }: {
+const ScheduleView = ({ user, onSchedule, onBack, appointments, services, availability, t, language }: {
   user: User | null;
   onSchedule: (appt: AppointmentPayload) => void;
+  onBack: () => void;
   appointments: Appointment[];
   services: ServiceDef[];
   availability: AvailabilityConfig;
@@ -1772,7 +1790,7 @@ const ScheduleView = ({ user, onSchedule, appointments, services, availability, 
       exit={{ opacity: 0, y: -20 }}
       className="pb-24 bg-[#f6f6f8] min-h-screen"
     >
-      <Header title={t('schedule')} onBack={() => { }} t={t} />
+      <Header title={t('schedule')} onBack={onBack} t={t} />
 
       {/* Service selector */}
       <div className="px-4 mb-4">
@@ -1832,8 +1850,8 @@ const ScheduleView = ({ user, onSchedule, appointments, services, availability, 
 
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
           <div className="grid grid-cols-7 mb-4">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-              <p key={d} className="text-slate-400 text-xs font-bold text-center">{d}</p>
+            {(language === 'es' ? ['D', 'L', 'M', 'M', 'J', 'V', 'S'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S']).map((d, i) => (
+              <p key={i} className="text-slate-400 text-xs font-bold text-center">{d}</p>
             ))}
           </div>
 
@@ -2380,7 +2398,7 @@ export default function App() {
         setView('admin');
         return;
       }
-      alert('No se encontró una cuenta con ese correo. Regístrate primero.');
+      alert(`${email} ${t('userNotFound')}`);
     }
   };
 
@@ -2464,6 +2482,7 @@ export default function App() {
                 key="register"
                 onRegister={handleRegister}
                 onSwitchToLogin={() => setView('login')}
+                onGoHome={() => setView('home')}
                 t={t}
               />
             )}
@@ -2472,6 +2491,7 @@ export default function App() {
                 key="login"
                 onLogin={handleLogin}
                 onSwitchToRegister={() => setView('register')}
+                onGoHome={() => setView('home')}
                 error={authError || undefined}
                 t={t}
               />
@@ -2518,6 +2538,7 @@ export default function App() {
                 key="schedule"
                 user={user}
                 onSchedule={addAppointment}
+                onBack={() => setView(user ? 'my-appointments' : 'home')}
                 appointments={appointments}
                 services={services}
                 availability={availability}
@@ -2546,18 +2567,18 @@ export default function App() {
             <div className="flex flex-col gap-4">
               <h4 className="font-bold text-slate-100 uppercase text-xs tracking-widest">{t('ourServices')}</h4>
               <nav className="flex flex-col gap-3 text-sm text-slate-400">
-                <button className="text-left hover:text-white transition-colors">{t('plumbing')}</button>
-                <button className="text-left hover:text-white transition-colors">{t('electrical')}</button>
-                <button className="text-left hover:text-white transition-colors">{t('carpentry')}</button>
-                <button className="text-left hover:text-white transition-colors">{t('painting')}</button>
+                <button onClick={() => setView('schedule')} className="text-left hover:text-white transition-colors">{t('plumbing')}</button>
+                <button onClick={() => setView('schedule')} className="text-left hover:text-white transition-colors">{t('electrical')}</button>
+                <button onClick={() => setView('schedule')} className="text-left hover:text-white transition-colors">{t('carpentry')}</button>
+                <button onClick={() => setView('schedule')} className="text-left hover:text-white transition-colors">{t('painting')}</button>
               </nav>
             </div>
             <div className="flex flex-col gap-4">
               <h4 className="font-bold text-slate-100 uppercase text-xs tracking-widest">{t('brand')}</h4>
               <nav className="flex flex-col gap-3 text-sm text-slate-400">
-                <button className="text-left hover:text-white transition-colors">{t('home')}</button>
+                <button className="text-left hover:text-white transition-colors" onClick={() => setView('home')}>{t('home')}</button>
                 <button className="text-left hover:text-white transition-colors" onClick={() => setView('schedule')}>{t('schedule')}</button>
-                <button className="text-left hover:text-white transition-colors" onClick={() => setView('admin')}>{t('admin')}</button>
+                {user?.role === 'admin' && <button className="text-left hover:text-white transition-colors" onClick={() => setView('admin')}>{t('admin')}</button>}
               </nav>
             </div>
           </div>
@@ -2565,7 +2586,7 @@ export default function App() {
 
         <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-center">
           <p className="text-slate-500 text-xs">
-            Â© 2026 {t('brand')} Inc. {language === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'}
+            &copy; 2026 {t('brand')} Inc. {language === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'}
           </p>
           <div className="flex items-center gap-6">
             <Icons.Facebook className="w-5 h-5 text-slate-500 hover:text-white cursor-pointer transition-colors" />
@@ -2578,7 +2599,7 @@ export default function App() {
       {/* Support Button (Desktop/Mobile) */}
       <div className="fixed bottom-8 right-8 z-50">
         <a
-          href="https://wa.me/12025550147"
+          href="https://wa.me/542236185899"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center p-4 bg-primary text-white rounded-2xl shadow-2xl hover:bg-slate-900 hover:shadow-primary/20 transition-all active:scale-95 group"

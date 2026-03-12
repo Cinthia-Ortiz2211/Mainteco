@@ -41,7 +41,20 @@ import {
   Star,
   DollarSign,
   Award,
-  Quote
+  Quote,
+  MapPin,
+  Camera,
+  Upload,
+  CreditCard,
+  Banknote,
+  Wallet,
+  Send,
+  Trash2,
+  Eye,
+  Image,
+  Globe,
+  Linkedin,
+  ExternalLink
 } from 'lucide-react';
 
 export {
@@ -87,5 +100,18 @@ export {
   Star,
   DollarSign,
   Award,
-  Quote
+  Quote,
+  MapPin,
+  Camera,
+  Upload,
+  CreditCard,
+  Banknote,
+  Wallet,
+  Send,
+  Trash2,
+  Eye,
+  Image,
+  Globe,
+  Linkedin,
+  ExternalLink
 };

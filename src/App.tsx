@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import * as Icons from './icons';
 
 // --- Types ---
-type View = 'home' | 'register' | 'register-success' | 'admin' | 'schedule' | 'login' | 'my-appointments';
+type View = 'home' | 'register' | 'register-success' | 'admin' | 'schedule' | 'login' | 'my-appointments' | 'profile' | 'portfolio';
 
 interface Appointment {
   id: string;
@@ -13,13 +13,17 @@ interface Appointment {
   serviceIndex: string; // Add index for icon/meta lookup
   date: string;
   time: string;
-  status: 'pending' | 'accepted' | 'declined';
+  status: 'pending' | 'accepted' | 'declined' | 'cancelled';
   tag: 'Urgent' | 'Routine';
   icon: any;
   notes?: string;
+  problemDescription?: string;
+  photoUrl?: string;
+  address?: string;
+  paymentMethod?: 'bank_transfer' | 'cash' | 'digital_wallet';
 }
 
-type AppointmentPayload = Omit<Appointment, 'id' | 'status' | 'clientName' | 'icon' | 'userId'>;
+type AppointmentPayload = Omit<Appointment, 'id' | 'status' | 'clientName' | 'icon' | 'userId' | 'notes'>;
 
 interface ServiceDef {
   id: string;
@@ -177,17 +181,68 @@ const translations = {
     guaranteeDesc: 'Every job backed by our satisfaction guarantee. Peace of mind included.',
     testimonials: 'What Our Clients Say',
     testimonialsSub: 'Real experiences from homeowners like you',
-    testimonial1: 'Excellent service! The plumber arrived on time and fixed everything perfectly. Highly recommended.',
-    testimonial1Name: 'María García',
-    testimonial2: 'Professional and affordable. They painted my entire house in two days with outstanding quality.',
-    testimonial2Name: 'Carlos López',
-    testimonial3: 'The best maintenance service I have used. Fast response and impeccable work.',
-    testimonial3Name: 'Ana Rodríguez',
     readyToStart: 'Ready to get started?',
     readyToStartSub: 'Schedule your first appointment today and enjoy a worry-free home.',
     registerSuccess: 'Registration Successful!',
     registerSuccessDesc: 'Your account has been created successfully. You can now sign in and schedule your appointment.',
     goToLogin: 'Sign In',
+    // Appointment enhancements
+    problemDescription: 'Describe Your Problem',
+    problemDescPlaceholder: 'Please describe the issue you need help with...',
+    uploadPhoto: 'Upload Photo (Optional)',
+    uploadPhotoHint: 'Attach a photo of the problem to help us assess it',
+    address: 'Service Address',
+    addressPlaceholder: 'Enter the full address where the service is needed',
+    cancelAppointment: 'Cancel Appointment',
+    cancelConfirmTitle: 'Cancel Appointment?',
+    cancelConfirmMsg: 'Are you sure you want to cancel this appointment? This action cannot be undone.',
+    confirmCancel: 'Yes, Cancel',
+    keepAppointment: 'Keep Appointment',
+    cancelled: 'Cancelled',
+    // Profile
+    myProfile: 'My Profile',
+    editProfile: 'Edit Profile',
+    saveProfile: 'Save Changes',
+    profileUpdated: 'Profile updated successfully',
+    personalInfo: 'Personal Information',
+    // Payment
+    paymentMethod: 'Payment Method',
+    bankTransfer: 'Bank Transfer',
+    cash: 'Cash',
+    accountBalance: 'Account Balance',
+    selectPayment: 'Select Payment Method',
+    // Portfolio
+    portfolio: 'Our Work',
+    portfolioSub: 'Browse our completed projects and see the quality of our work',
+    projectBefore: 'Before',
+    projectAfter: 'After',
+    viewProject: 'View Project',
+    clientTestimonial: 'Client Testimonial',
+    completedProjects: 'Completed Projects',
+    // Footer
+    directContact: 'Direct Contact',
+    quickMessage: 'Quick Message',
+    yourName: 'Your Name',
+    yourEmail: 'Your Email',
+    yourMessage: 'Your Message',
+    sendMessage: 'Send Message',
+    chatWhatsApp: 'Chat on WhatsApp',
+    followUs: 'Follow Us',
+    date: 'Date',
+    time: 'Time',
+    // Project specific
+    bathroomRenovation: 'Modern Bathroom Renovation',
+    bathroomDesc: 'Complete remodeling of a residential bathroom with premium finishes and minimalist design.',
+    kitchenUpgrade: 'Luxury Kitchen Upgrade',
+    kitchenDesc: 'High-end kitchen renovation featuring custom cabinetry and professional-grade appliances.',
+    deckInstallation: 'Premium Deck & Pergola',
+    deckDesc: 'Custom outdoor living space built with durable cedar wood and integrated lighting.',
+    testimonial1: 'Excellent service! The plumber arrived on time and fixed everything perfectly. Highly recommended.',
+    testimonial1Name: 'Maria Garcia',
+    testimonial2: 'Professional and affordable. They painted my entire house in two days with incredible quality.',
+    testimonial2Name: 'Carlos Lopez',
+    testimonial3: 'The best maintenance service I have ever used. Quick response and flawless work.',
+    testimonial3Name: 'Ana Rodriguez',
     monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
   },
   es: {
@@ -285,19 +340,22 @@ const translations = {
     fairPriceDesc: 'Presupuestos transparentes sin cargos ocultos. Calidad al precio correcto.',
     guarantee: 'Garantía de Servicio',
     guaranteeDesc: 'Cada trabajo respaldado por nuestra garantía de satisfacción. Tranquilidad incluida.',
-    testimonials: 'Lo Que Dicen Nuestros Clientes',
-    testimonialsSub: 'Experiencias reales de propietarios como tú',
-    testimonial1: 'Excelente servicio! El plomero llegó puntual y arregló todo perfectamente. Muy recomendable.',
+    // Footer
+    chatWhatsApp: 'Chatear por WhatsApp',
+    followUs: 'Seguinos',
+    // Project specific
+    bathroomRenovation: 'Renovación de Baño Moderna',
+    bathroomDesc: 'Remodelación completa de un baño residencial con acabados premium y diseño minimalista.',
+    kitchenUpgrade: 'Actualización de Cocina de Lujo',
+    kitchenDesc: 'Renovación de cocina de alta gama con muebles a medida y electrodomésticos profesionales.',
+    deckInstallation: 'Deck y Pérgola Premium',
+    deckDesc: 'Espacio de vida al aire libre a medida construido con madera de cedro y luces integradas.',
+    testimonial1: '¡Excelente servicio! El plomero llegó puntual y arregló todo perfectamente. Muy recomendable.',
     testimonial1Name: 'María García',
     testimonial2: 'Profesionales y accesibles. Pintaron toda mi casa en dos días con una calidad increíble.',
     testimonial2Name: 'Carlos López',
     testimonial3: 'El mejor servicio de mantenimiento que he utilizado. Respuesta rápida y trabajo impecable.',
     testimonial3Name: 'Ana Rodríguez',
-    readyToStart: '¿Listo para comenzar?',
-    readyToStartSub: 'Agenda tu primera cita hoy y disfruta de un hogar sin preocupaciones.',
-    registerSuccess: '¡Registro exitoso!',
-    registerSuccessDesc: 'Tu cuenta ha sido creada correctamente. Ya podés iniciar sesión y agendar tu cita.',
-    goToLogin: 'Iniciar Sesión',
     monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
   }
 };
@@ -361,6 +419,7 @@ const Navbar = ({
   const allMenuItems: { id: View; label: string; icon: React.FC<any> }[] = [
     { id: 'home', label: t('home'), icon: Icons.HomeIcon },
     { id: 'my-appointments', label: t('schedule'), icon: Icons.Calendar },
+    { id: 'portfolio', label: t('portfolio'), icon: Icons.Image },
     { id: 'register', label: t('register'), icon: Icons.PlusCircle },
     { id: 'admin', label: t('admin'), icon: Icons.LayoutDashboard },
   ];
@@ -441,6 +500,13 @@ const Navbar = ({
                         </div>
                         {/* Actions */}
                         <div className="p-2">
+                          <button
+                            onClick={() => handleNavClick('profile')}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-all text-sm font-medium"
+                          >
+                            <Icons.UserCircle className="w-4 h-4 text-primary" />
+                            <span>{t('myProfile' as any)}</span>
+                          </button>
                           <button
                             onClick={() => handleNavClick('my-appointments')}
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-all text-sm font-medium"
@@ -965,6 +1031,336 @@ const RegisterSuccessView = ({ onGoToLogin, t }: { onGoToLogin: () => void; t: (
             {t('goToLogin')}
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
           </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const ProfileView = ({ user, onSave, onGoHome, t }: {
+  user: User;
+  onSave: (updated: User) => void;
+  onGoHome: () => void;
+  t: (k: keyof typeof translations['en']) => string;
+  key?: string;
+}) => {
+  const [formData, setFormData] = useState<User>({ ...user });
+  const [editing, setEditing] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    onSave(formData);
+    setEditing(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="pb-24 min-h-screen"
+    >
+      <div className="max-w-2xl mx-auto px-4 pt-6">
+        <div className="flex items-center gap-3 mb-8">
+          <button className="p-2 rounded-full hover:bg-slate-100 transition-colors" onClick={onGoHome}>
+            <Icons.ArrowLeft className="w-6 h-6" />
+          </button>
+          <h1 className="text-2xl font-black text-slate-900">{t('myProfile' as any)}</h1>
+        </div>
+
+        {saved && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3"
+          >
+            <Icons.CheckCircle2 className="w-5 h-5 text-emerald-500" />
+            <span className="text-sm font-bold text-emerald-700">{t('profileUpdated' as any)}</span>
+          </motion.div>
+        )}
+
+        {/* Profile Header */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-6">
+          <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent px-6 py-8 flex items-center gap-5">
+            <div className="w-20 h-20 rounded-2xl bg-primary/15 flex items-center justify-center shadow-inner">
+              <Icons.UserCircle className="w-12 h-12 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900">{user.firstName} {user.lastName}</h2>
+              <p className="text-slate-500 text-sm">{user.email}</p>
+              {user.role === 'admin' && (
+                <span className="inline-block mt-1 px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider rounded-md">Admin</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Personal Info */}
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <Icons.UserCircle className="w-5 h-5 text-primary" />
+              {t('personalInfo' as any)}
+            </h3>
+            {!editing && (
+              <button
+                onClick={() => setEditing(true)}
+                className="px-4 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-all flex items-center gap-1.5"
+              >
+                <Icons.Edit3 className="w-3.5 h-3.5" />
+                {t('editProfile' as any)}
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">{t('firstName')}</label>
+                {editing ? (
+                  <input
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm font-medium"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  />
+                ) : (
+                  <p className="px-4 py-3 bg-slate-50 rounded-xl text-sm font-bold text-slate-900">{user.firstName}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">{t('lastName')}</label>
+                {editing ? (
+                  <input
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm font-medium"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  />
+                ) : (
+                  <p className="px-4 py-3 bg-slate-50 rounded-xl text-sm font-bold text-slate-900">{user.lastName}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">{t('email')}</label>
+              {editing ? (
+                <div className="flex items-center gap-2 px-4 py-3 border border-slate-200 bg-white rounded-xl focus-within:ring-2 focus-within:ring-primary">
+                  <Icons.Mail className="w-4 h-4 text-slate-400" />
+                  <input
+                    className="flex-1 bg-transparent border-none outline-none text-sm font-medium"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    type="email"
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 rounded-xl">
+                  <Icons.Mail className="w-4 h-4 text-slate-400" />
+                  <p className="text-sm font-bold text-slate-900">{user.email}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">{t('phone')}</label>
+              {editing ? (
+                <input
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-sm font-medium"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="+54 11 1234-5678"
+                />
+              ) : (
+                <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 rounded-xl">
+                  <Icons.Phone className="w-4 h-4 text-slate-400" />
+                  <p className="text-sm font-bold text-slate-900">{user.phone || '—'}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {editing && (
+            <div className="flex gap-3 pt-4 border-t border-slate-100">
+              <button
+                onClick={() => { setEditing(false); setFormData({ ...user }); }}
+                className="flex-1 py-3.5 rounded-2xl bg-slate-100 text-slate-600 font-bold transition-all active:scale-95"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                onClick={handleSave}
+                className="flex-1 py-3.5 rounded-2xl bg-primary text-white font-bold shadow-lg shadow-primary/25 transition-all active:scale-95 flex items-center justify-center gap-2"
+              >
+                <Icons.Check className="w-4 h-4" />
+                {t('saveProfile' as any)}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const PortfolioView = ({ onGoHome, onSchedule, t }: {
+  onGoHome: () => void;
+  onSchedule: () => void;
+  t: (k: keyof typeof translations['en']) => string;
+  key?: string;
+}) => {
+  const projects = [
+    {
+      title: t('bathroomRenovation' as any),
+      description: t('bathroomDesc' as any),
+      beforeImg: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&h=400&fit=crop',
+      afterImg: '/images/portfolio/bathroom_after.png',
+      testimonial: t('testimonial1' as any),
+      clientName: t('testimonial1Name' as any),
+      rating: 5
+    },
+    {
+      title: t('kitchenUpgrade' as any),
+      description: t('kitchenDesc' as any),
+      beforeImg: 'https://images.unsplash.com/photo-1556911223-e15206781dd0?w=600&h=400&fit=crop',
+      afterImg: '/images/portfolio/kitchen_after.png',
+      testimonial: t('testimonial2' as any),
+      clientName: t('testimonial2Name' as any),
+      rating: 5
+    },
+    {
+      title: t('deckInstallation' as any),
+      description: t('deckDesc' as any),
+      beforeImg: 'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?w=600&h=400&fit=crop',
+      afterImg: '/images/portfolio/deck_after.png',
+      testimonial: t('testimonial3' as any),
+      clientName: t('testimonial3Name' as any),
+      rating: 5
+    }
+  ];
+
+  const [expandedProject, setExpandedProject] = useState<number | null>(null);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="pb-24 min-h-screen"
+    >
+      {/* Hero */}
+      <div className="relative overflow-hidden px-4 md:px-8 pt-6 pb-10">
+        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-primary/40 rounded-3xl px-6 md:px-12 py-14 text-center relative overflow-hidden shadow-2xl">
+          <div className="absolute inset-0 opacity-10" style={{ background: 'radial-gradient(circle at 70% 30%, rgba(23,84,207,0.5), transparent 60%)' }}></div>
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-6">
+              <Icons.Award className="w-4 h-4 text-amber-400" />
+              <span className="text-white/90 text-xs font-bold uppercase tracking-wider">{t('completedProjects' as any)}</span>
+            </div>
+            <h1 className="text-white text-3xl md:text-5xl font-black tracking-tight mb-4">{t('portfolio' as any)}</h1>
+            <p className="text-white/70 text-sm md:text-base max-w-lg mx-auto">{t('portfolioSub' as any)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Project Cards */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-8">
+        {projects.map((project, i) => (
+          <motion.div
+            key={i}
+            layout
+            className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-lg transition-shadow"
+          >
+            {/* Project Header */}
+            <div className="p-6 md:p-8">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <span className="text-[10px] font-black text-primary uppercase tracking-widest">
+                    {t('service' as any)} #{i + 1}
+                  </span>
+                  <h3 className="text-xl md:text-2xl font-black text-slate-900 mt-1">{project.title}</h3>
+                  <p className="text-slate-500 text-sm mt-2 max-w-lg">{project.description}</p>
+                </div>
+                <button
+                  onClick={() => setExpandedProject(expandedProject === i ? null : i)}
+                  className="p-3 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all"
+                >
+                  <Icons.Eye className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Before/After Gallery */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                <div className="relative rounded-2xl overflow-hidden group">
+                  <img src={project.beforeImg} alt="Before" className="w-full h-52 md:h-64 object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <div className="absolute top-3 left-3 px-3 py-1.5 bg-rose-500 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-lg">
+                    {t('projectBefore' as any)}
+                  </div>
+                </div>
+                <div className="relative rounded-2xl overflow-hidden group">
+                  <img src={project.afterImg} alt="After" className="w-full h-52 md:h-64 object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <div className="absolute top-3 left-3 px-3 py-1.5 bg-emerald-500 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-lg">
+                    {t('projectAfter' as any)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial (expanded) */}
+            <AnimatePresence>
+              {expandedProject === i && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-6 md:px-8 pb-6 md:pb-8 pt-2">
+                    <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Icons.Quote className="w-4 h-4 text-primary/30" />
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('clientTestimonial' as any)}</span>
+                      </div>
+                      <p className="text-slate-600 text-sm leading-relaxed italic mb-4">"{project.testimonial}"</p>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Icons.UserCircle className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900">{project.clientName}</p>
+                          <div className="flex gap-0.5">
+                            {Array.from({ length: project.rating }).map((_, s) => (
+                              <Icons.Star key={s} className="w-3 h-3 text-amber-400 fill-amber-400" />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 mt-12">
+        <div className="bg-primary rounded-3xl px-6 md:px-12 py-10 md:py-14 text-center relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10" style={{ background: 'radial-gradient(circle at 30% 50%, rgba(255,255,255,0.3), transparent 60%)' }}></div>
+          <div className="relative z-10">
+            <h2 className="text-white text-2xl md:text-3xl font-black tracking-tight mb-3">{t('readyToStart')}</h2>
+            <p className="text-white/80 text-sm md:text-base mb-8 max-w-md mx-auto">{t('readyToStartSub')}</p>
+            <button
+              onClick={onSchedule}
+              className="inline-flex items-center justify-center gap-3 rounded-2xl h-16 px-12 bg-white text-primary text-lg font-extrabold tracking-wide shadow-2xl hover:shadow-[0_8px_40px_rgba(255,255,255,0.4)] active:scale-95 transition-all duration-200"
+            >
+              {t('requestAppt')}
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -1585,11 +1981,13 @@ const UserAppointmentsView = ({
   user,
   appointments,
   onNewAppointment,
+  onCancelAppointment,
   t
 }: {
   user: User | null;
   appointments: Appointment[];
   onNewAppointment: () => void;
+  onCancelAppointment: (id: string) => void;
   t: (k: keyof typeof translations['en']) => string;
   key?: string;
 }) => {
@@ -1598,6 +1996,8 @@ const UserAppointmentsView = ({
   const userAppts = appointments.filter(
     a => a.userId === user.id
   );
+
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   return (
     <motion.div
@@ -1631,7 +2031,8 @@ const UserAppointmentsView = ({
                   <p className="text-slate-500 text-xs">{req.date} {req.time}</p>
                   <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${req.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
                     req.status === 'declined' ? 'bg-rose-100 text-rose-700' :
-                      'bg-slate-100 text-slate-500'
+                      req.status === 'cancelled' ? 'bg-slate-200 text-slate-500' :
+                        'bg-slate-100 text-slate-500'
                     }`}>
                     {t(req.status as any)}
                   </span>
@@ -1642,8 +2043,28 @@ const UserAppointmentsView = ({
                 {t(req.tag === 'Urgent' ? 'urgent' : 'routine')}
               </span>
             </div>
+            {req.problemDescription && (
+              <div className="bg-slate-50 p-3 rounded-xl">
+                <p className="text-xs text-slate-500 font-medium"><span className="font-bold text-slate-600">{t('problemDescription' as any)}:</span> {req.problemDescription}</p>
+              </div>
+            )}
+            {req.address && (
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <Icons.MapPin className="w-3.5 h-3.5 text-primary" />
+                <span>{req.address}</span>
+              </div>
+            )}
             {req.notes && (
               <p className="text-xs text-slate-500 bg-slate-50 p-2 rounded-xl italic">"{req.notes}"</p>
+            )}
+            {req.status === 'pending' && (
+              <button
+                onClick={() => setCancellingId(req.id)}
+                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-rose-50 text-rose-500 border border-rose-100 text-sm font-bold hover:bg-rose-100 transition-all active:scale-95"
+              >
+                <Icons.Trash2 className="w-4 h-4" />
+                {t('cancelAppointment' as any)}
+              </button>
             )}
           </div>
         ))}
@@ -1673,6 +2094,49 @@ const UserAppointmentsView = ({
           {t('requestNewAppt')}
         </button>
       )}
+
+      {/* Cancel Confirmation Modal */}
+      <AnimatePresence>
+        {cancellingId && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setCancellingId(null)}
+              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[200]"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="fixed inset-0 flex items-center justify-center z-[201] px-4"
+            >
+              <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full text-center space-y-5">
+                <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto">
+                  <Icons.AlertCircle className="w-8 h-8 text-rose-500" />
+                </div>
+                <h3 className="text-xl font-black text-slate-900">{t('cancelConfirmTitle' as any)}</h3>
+                <p className="text-slate-500 text-sm">{t('cancelConfirmMsg' as any)}</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setCancellingId(null)}
+                    className="flex-1 py-3.5 rounded-2xl bg-slate-100 text-slate-600 font-bold transition-all active:scale-95"
+                  >
+                    {t('keepAppointment' as any)}
+                  </button>
+                  <button
+                    onClick={() => { onCancelAppointment(cancellingId); setCancellingId(null); }}
+                    className="flex-1 py-3.5 rounded-2xl bg-rose-500 text-white font-bold shadow-lg shadow-rose-200 transition-all active:scale-95"
+                  >
+                    {t('confirmCancel' as any)}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
@@ -1708,6 +2172,21 @@ const ScheduleView = ({ user, onSchedule, onBack, appointments, services, availa
   const [selectedTag, setSelectedTag] = useState<'Routine' | 'Urgent'>('Routine');
   const [selectedService, setSelectedService] = useState(0);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [problemDescription, setProblemDescription] = useState('');
+  const [address, setAddress] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'cash' | 'account_balance'>('bank_transfer');
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setPhotoPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
 
   const timeSlots = [
     { time: '09:00', period: t('morning') },
@@ -1946,30 +2425,78 @@ const ScheduleView = ({ user, onSchedule, onBack, appointments, services, availa
         )}
       </div>
 
-      <div className="mt-10 p-4 pb-12 space-y-6">
-        <div className="flex items-center justify-between px-2">
-          <div className="flex flex-col">
-            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t('status')}</span>
-            <span className={`text-sm font-bold flex items-center gap-1 ${selectedTag === 'Urgent' ? 'text-amber-500' : 'text-blue-500'}`}>
-              {selectedTag === 'Urgent' ? <Icons.Zap className="w-4 h-4" /> : <Icons.Clock className="w-4 h-4" />}
-              {selectedTag === 'Urgent' ? t('urgent') : t('routine')}
-            </span>
-          </div>
-          <div className="text-right">
-            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t('schedule')}</span>
-            <p className="text-sm font-bold">{localizedMonthShort} {selectedDay} • {selectedTime}</p>
-            <p className="text-xs text-slate-500">{t(services[selectedService].titleKey)}</p>
+      <div className="mt-8 px-4 space-y-6">
+        {/* Problem Description (Mandatory) */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex justify-between px-1">
+            {t('problemDescription' as any)}
+            <span className="text-rose-500 text-[10px] font-black">{language === 'es' ? 'OBLIGATORIO' : 'REQUIRED'}</span>
+          </label>
+          <textarea
+            required
+            className="w-full px-4 py-4 rounded-2xl border border-slate-200 bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium min-h-[120px] resize-none shadow-inner"
+            placeholder={t('problemDescPlaceholder' as any)}
+            value={problemDescription}
+            onChange={(e) => setProblemDescription(e.target.value)}
+          />
+        </div>
+
+        {/* Address (Mandatory) */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex justify-between px-1">
+            {t('address' as any)}
+            <span className="text-rose-500 text-[10px] font-black">{language === 'es' ? 'OBLIGATORIO' : 'REQUIRED'}</span>
+          </label>
+          <div className="relative group">
+            <Icons.MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+            <input
+              required
+              type="text"
+              className="w-full pl-11 pr-4 py-4 rounded-2xl border border-slate-200 bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium shadow-inner"
+              placeholder={t('addressPlaceholder' as any)}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
           </div>
         </div>
+
+        {/* Photo Upload (Optional) */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">
+            {t('uploadPhoto' as any)}
+          </label>
+          <div className="flex flex-col gap-3">
+            <label className="flex items-center justify-center gap-3 p-6 border-2 border-dashed border-slate-200 rounded-2xl cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group">
+              <div className="flex flex-col items-center gap-1">
+                <Icons.Upload className="w-6 h-6 text-slate-400 group-hover:text-primary transition-colors" />
+                <span className="text-xs font-bold text-slate-500">{t('uploadPhoto' as any)}</span>
+              </div>
+              <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+            </label>
+            {photoPreview && (
+              <div className="relative w-28 h-28 rounded-2xl overflow-hidden border border-slate-200 group self-start shadow-md">
+                <img src={photoPreview} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt="Preview" />
+                <button
+                  onClick={() => { setPhoto(null); setPhotoPreview(null); }}
+                  className="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Icons.X className="w-6 h-6 text-white" />
+                </button>
+              </div>
+            )}
+            <p className="text-[10px] text-slate-400 px-1 font-medium">{t('uploadPhotoHint' as any)}</p>
+          </div>
+        </div>
+
         <button
-          disabled={!isSelectedSlotAvailable}
+          disabled={!isSelectedSlotAvailable || !problemDescription.trim() || !address.trim()}
           onClick={() => setShowConfirmation(true)}
-          className={`w-full font-bold py-4 rounded-2xl transition-all
-          ${isSelectedSlotAvailable
-              ? 'bg-primary text-white shadow-xl shadow-primary/25 active:scale-95'
+          className={`w-full font-black py-5 rounded-2xl transition-all text-lg tracking-wide mt-6
+          ${isSelectedSlotAvailable && problemDescription.trim() && address.trim()
+              ? 'bg-primary text-white shadow-2xl shadow-primary/30 active:scale-[0.98] hover:bg-[#1240a8]'
               : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
         >
-          {isSelectedSlotAvailable ? t('confirmAppt') : t('slotUnavailable')}
+          {t('requestAppt')}
         </button>
       </div>
 
@@ -1987,7 +2514,7 @@ const ScheduleView = ({ user, onSchedule, onBack, appointments, services, availa
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[40px] p-8 z-[201] shadow-2xl"
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[40px] p-8 z-[201] shadow-2xl max-h-[90vh] overflow-y-auto"
             >
               <div className="flex flex-col gap-8">
                 <div className="text-center space-y-2">
@@ -1998,50 +2525,98 @@ const ScheduleView = ({ user, onSchedule, onBack, appointments, services, availa
                   <p className="text-slate-500 font-medium">{t('confirmDetails')}</p>
                 </div>
 
-                <div className="bg-slate-50 rounded-3xl p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('service')}</span>
-                    <span className="text-slate-900 font-bold">{t(services[selectedService].titleKey)}</span>
+                <div className="bg-slate-50 rounded-[32px] p-6 space-y-4 shadow-inner border border-slate-100">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-200/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        {(() => {
+                          const SvcIcon = services[selectedService].icon;
+                          return SvcIcon && <SvcIcon className="w-5 h-5" />;
+                        })()}
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('service')}</p>
+                        <p className="text-sm font-bold text-slate-900">{t(services[selectedService].titleKey)}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('schedule')}</span>
-                    <span className="text-slate-900 font-bold">{localizedMonthShort} {selectedDay} • {selectedTime}</span>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('date')}</p>
+                      <p className="text-sm font-bold text-slate-900">{selectedDay} {monthName}</p>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('time')}</p>
+                      <p className="text-sm font-bold text-slate-900">{selectedTime}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('status')}</span>
-                    <span className={`font-bold flex items-center gap-1 ${selectedTag === 'Urgent' ? 'text-amber-500' : 'text-blue-500'}`}>
-                      {selectedTag === 'Urgent' ? <Icons.Zap className="w-4 h-4" /> : <Icons.Clock className="w-4 h-4" />}
-                      {selectedTag === 'Urgent' ? t('urgent') : t('routine')}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                    <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('price')}</span>
-                    <span className="text-primary text-xl font-black">{services[selectedService]?.price}</span>
+
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('address' as any)}</p>
+                    <p className="text-sm font-bold text-slate-900 line-clamp-1">{address}</p>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3">
-                  <button
-                    onClick={() => {
-                      const selectedServiceDef = services[Object.keys(services)[selectedService]];
-                      onSchedule({
-                        service: selectedServiceDef.titleKey,
-                        serviceIndex: selectedService.toString(),
-                        date: `${canonicalMonthShort} ${selectedDay}`,
-                        time: selectedTime,
-                        tag: selectedTag,
-                      });
-                      setShowConfirmation(false);
-                    }}
-                    className="w-full bg-primary text-white font-bold py-5 rounded-2xl shadow-xl shadow-primary/25 active:scale-95 transition-all"
-                  >
-                    {t('confirmAndSend')}
-                  </button>
+                {/* Payment Selection */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 px-2">
+                    <Icons.CreditCard className="w-5 h-5 text-primary" />
+                    <h4 className="text-sm font-bold text-slate-900">{t('paymentMethod' as any)}</h4>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {[
+                      { id: 'bank_transfer', label: 'bankTransfer', icon: Icons.Globe },
+                      { id: 'cash', label: 'cash', icon: Icons.Banknote },
+                      { id: 'account_balance', label: 'accountBalance', icon: Icons.Wallet }
+                    ].map((pm) => (
+                      <button
+                        key={pm.id}
+                        onClick={() => setPaymentMethod(pm.id as any)}
+                        className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all group outline-none ${paymentMethod === pm.id
+                          ? 'border-primary bg-primary/5 text-primary shadow-lg shadow-primary/5'
+                          : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
+                          }`}
+                      >
+                        <div className={`p-2 rounded-lg transition-colors ${paymentMethod === pm.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'}`}>
+                          <pm.icon className="w-4 h-4" />
+                        </div>
+                        <span className="text-sm font-bold">{t(pm.label as any)}</span>
+                        {paymentMethod === pm.id && (
+                          <div className="ml-auto w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                            <Icons.Check className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
                   <button
                     onClick={() => setShowConfirmation(false)}
-                    className="w-full bg-slate-100 text-slate-600 font-bold py-4 rounded-2xl active:scale-95 transition-all"
+                    className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl active:scale-95 transition-all outline-none"
                   >
-                    {t('backToSelection')}
+                    {t('back')}
+                  </button>
+                  <button
+                    onClick={() => {
+                        onSchedule({
+                        service: t(services[selectedService].titleKey),
+                        serviceIndex: services[selectedService].id,
+                        date: `${selectedDay} ${canonicalMonthShort}`,
+                        time: selectedTime,
+                        tag: selectedTag,
+                        problemDescription,
+                        address,
+                        paymentMethod,
+                        photoUrl: photoPreview || undefined
+                        });
+                        setShowConfirmation(false);
+                    }}
+                    className="flex-[2] py-4 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/30 active:scale-95 transition-all text-base uppercase tracking-wider outline-none"
+                  >
+                    {t('confirmAndSend')}
                   </button>
                 </div>
               </div>
@@ -2229,6 +2804,10 @@ export default function App() {
           date: appt.date,
           time: appt.time,
           tag: appt.tag,
+          problemDescription: appt.problemDescription,
+          address: appt.address,
+          paymentMethod: appt.paymentMethod,
+          photoUrl: appt.photoUrl,
         }),
         signal: controller.signal
       });
@@ -2256,6 +2835,10 @@ export default function App() {
         status: 'pending',
         tag: appt.tag as 'Urgent' | 'Routine',
         icon: selectedServiceDef.icon,
+        problemDescription: appt.problemDescription,
+        address: appt.address,
+        paymentMethod: appt.paymentMethod,
+        photoUrl: appt.photoUrl,
       };
       setAppointments([localAppt, ...appointments]);
       setView(user.role === 'admin' ? 'admin' : 'my-appointments');
@@ -2421,6 +3004,19 @@ export default function App() {
     }
   };
 
+  const handleCancelAppointment = (id: string) => {
+    setAppointments(appointments.map(a => a.id === id ? { ...a, status: 'cancelled' } : a));
+  };
+
+  const handleSaveProfile = (updated: User) => {
+    setUser(updated);
+    localStorage.setItem('mainten_user', JSON.stringify(updated));
+    // Also update in registered users list
+    const users = JSON.parse(localStorage.getItem('mainten_users') || '[]');
+    const nextUsers = users.map((u: User) => u.id === updated.id ? updated : u);
+    localStorage.setItem('mainten_users', JSON.stringify(nextUsers));
+  };
+
   const updateAppointmentStatus = async (id: string, status: 'accepted' | 'declined') => {
     // Look up the service price for the email notification
     const appt = appointments.find(a => a.id === id);
@@ -2512,7 +3108,8 @@ export default function App() {
                 key="my-appointments"
                 user={user}
                 appointments={appointments}
-                onNewAppointment={() => setView('schedule')}
+                onNewAppointment={handleScheduleClick}
+                onCancelAppointment={handleCancelAppointment}
                 t={t}
               />
             )}
@@ -2538,7 +3135,7 @@ export default function App() {
                 key="schedule"
                 user={user}
                 onSchedule={addAppointment}
-                onBack={() => setView(user ? 'my-appointments' : 'home')}
+                onBack={() => setView('my-appointments')}
                 appointments={appointments}
                 services={services}
                 availability={availability}
@@ -2546,52 +3143,151 @@ export default function App() {
                 language={language}
               />
             )}
+            {view === 'profile' && user && (
+              <ProfileView
+                key="profile"
+                user={user}
+                onSave={handleSaveProfile}
+                onGoHome={() => setView('home')}
+                t={t}
+              />
+            )}
+            {view === 'portfolio' && (
+              <PortfolioView
+                key="portfolio"
+                onGoHome={() => setView('home')}
+                onSchedule={handleScheduleClick}
+                t={t}
+              />
+            )}
           </AnimatePresence>
         </div>
       </main>
 
       {/* Global Footer */}
-      <footer className="bg-slate-900 text-white mt-12 py-16 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start gap-12">
-          <div className="flex flex-col gap-4 max-w-sm">
-            <div className="flex items-center gap-2">
-              <Icons.Wrench className="w-8 h-8 text-primary" />
-              <span className="text-2xl font-black tracking-tighter">{t('brand')}</span>
+      <footer className="bg-slate-900 text-white mt-24 pt-20 pb-10 px-6 overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-20"></div>
+
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-8">
+          {/* Brand & Socials */}
+          <div className="lg:col-span-4 flex flex-col gap-8">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
+                <Icons.Wrench className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-3xl font-black tracking-tighter leading-none">{t('brand')}</span>
+                <span className="text-[10px] text-primary font-bold uppercase tracking-[0.2em] mt-1">{language === 'en' ? 'Professional Maintenance' : 'Mantenimiento Profesional'}</span>
+              </div>
             </div>
-            <p className="text-slate-400 text-sm leading-relaxed">
-              {t('welcomeSub')}
+            <p className="text-slate-400 text-base leading-relaxed max-w-sm">
+              {language === 'en'
+                ? 'Providing high-quality home maintenance and specialized repairs since 2010. Your comfort is our priority.'
+                : 'Brindamos mantenimiento para el hogar y reparaciones especializadas de alta calidad desde 2010. Tu comodidad es nuestra prioridad.'}
             </p>
+            <div className="flex items-center gap-5">
+              {[
+                { icon: Icons.Facebook, href: '#' },
+                { icon: Icons.Twitter, href: '#' },
+                { icon: Icons.Instagram, href: '#' },
+                { icon: Icons.Linkedin, href: '#' }
+              ].map((social, idx) => (
+                <a
+                  key={idx}
+                  href={social.href}
+                  className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white hover:-translate-y-1 transition-all shadow-sm"
+                >
+                  <social.icon className="w-5 h-5" />
+                </a>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-10">
-            <div className="flex flex-col gap-4">
-              <h4 className="font-bold text-slate-100 uppercase text-xs tracking-widest">{t('ourServices')}</h4>
-              <nav className="flex flex-col gap-3 text-sm text-slate-400">
-                <button onClick={() => setView('schedule')} className="text-left hover:text-white transition-colors">{t('plumbing')}</button>
-                <button onClick={() => setView('schedule')} className="text-left hover:text-white transition-colors">{t('electrical')}</button>
-                <button onClick={() => setView('schedule')} className="text-left hover:text-white transition-colors">{t('carpentry')}</button>
-                <button onClick={() => setView('schedule')} className="text-left hover:text-white transition-colors">{t('painting')}</button>
+          {/* Quick Links */}
+          <div className="lg:col-span-4 grid grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <h4 className="font-black text-slate-100 text-sm uppercase tracking-widest border-l-4 border-primary pl-3">{t('ourServices')}</h4>
+              <nav className="flex flex-col gap-4 text-sm font-medium text-slate-400">
+                <button onClick={() => setView('schedule')} className="text-left hover:text-primary transition-colors flex items-center gap-2 group">
+                  <span className="w-1.5 h-1.5 bg-slate-700 rounded-full group-hover:bg-primary transition-colors"></span>
+                  {t('plumbing')}
+                </button>
+                <button onClick={() => setView('schedule')} className="text-left hover:text-primary transition-colors flex items-center gap-2 group">
+                  <span className="w-1.5 h-1.5 bg-slate-700 rounded-full group-hover:bg-primary transition-colors"></span>
+                  {t('electrical')}
+                </button>
+                <button onClick={() => setView('schedule')} className="text-left hover:text-primary transition-colors flex items-center gap-2 group">
+                  <span className="w-1.5 h-1.5 bg-slate-700 rounded-full group-hover:bg-primary transition-colors"></span>
+                  {t('carpentry')}
+                </button>
+                <button onClick={() => setView('schedule')} className="text-left hover:text-primary transition-colors flex items-center gap-2 group">
+                  <span className="w-1.5 h-1.5 bg-slate-700 rounded-full group-hover:bg-primary transition-colors"></span>
+                  {t('painting')}
+                </button>
               </nav>
             </div>
-            <div className="flex flex-col gap-4">
-              <h4 className="font-bold text-slate-100 uppercase text-xs tracking-widest">{t('brand')}</h4>
-              <nav className="flex flex-col gap-3 text-sm text-slate-400">
-                <button className="text-left hover:text-white transition-colors" onClick={() => setView('home')}>{t('home')}</button>
-                <button className="text-left hover:text-white transition-colors" onClick={() => setView('schedule')}>{t('schedule')}</button>
-                {user?.role === 'admin' && <button className="text-left hover:text-white transition-colors" onClick={() => setView('admin')}>{t('admin')}</button>}
-              </nav>
+            <div className="space-y-6">
+              <h4 className="font-black text-slate-100 text-sm uppercase tracking-widest border-l-4 border-primary pl-3">{t('directContact' as any)}</h4>
+              <div className="flex flex-col gap-4 text-sm font-medium text-slate-400">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-primary">
+                    <Icons.Phone className="w-4 h-4" />
+                  </div>
+                  <span>+54 223 618-5899</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-primary">
+                    <Icons.Mail className="w-4 h-4" />
+                  </div>
+                  <span>contacto@maintenco.com</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-primary">
+                    <Icons.MapPin className="w-4 h-4" />
+                  </div>
+                  <span>Mar del Plata, Argentina</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Form */}
+          <div className="lg:col-span-4 space-y-6">
+            <h4 className="font-black text-slate-100 text-sm uppercase tracking-widest border-l-4 border-primary pl-3">{t('quickMessage' as any)}</h4>
+            <div className="flex flex-col gap-3">
+              <input
+                type="text"
+                placeholder={t('yourName' as any)}
+                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-500"
+              />
+              <input
+                type="email"
+                placeholder={t('yourEmail' as any)}
+                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-500"
+              />
+              <textarea
+                placeholder={t('yourMessage' as any)}
+                className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-500 min-h-[80px] resize-none"
+              />
+              <button
+                className="w-full py-3 bg-primary hover:bg-[#1240a8] text-white font-black rounded-xl text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+              >
+                <Icons.Send className="w-3.5 h-3.5" />
+                {t('sendMessage' as any)}
+              </button>
             </div>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4 text-center">
-          <p className="text-slate-500 text-xs">
-            &copy; 2026 {t('brand')} Inc. {language === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'}
+        {/* Bottom Bar */}
+        <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-6 text-center">
+          <p className="text-slate-500 text-[11px] font-medium tracking-wide">
+            &copy; 2026 {t('brand')} INC. {language === 'en' ? 'ALL RIGHTS RESERVED.' : 'TODOS LOS DERECHOS RESERVADOS.'}
           </p>
-          <div className="flex items-center gap-6">
-            <Icons.Facebook className="w-5 h-5 text-slate-500 hover:text-white cursor-pointer transition-colors" />
-            <Icons.Twitter className="w-5 h-5 text-slate-500 hover:text-white cursor-pointer transition-colors" />
-            <Icons.Instagram className="w-5 h-5 text-slate-500 hover:text-white cursor-pointer transition-colors" />
+          <div className="flex items-center gap-8 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+            <button key="privacy" className="hover:text-white transition-colors">Privacy Policy</button>
+            <button key="terms" className="hover:text-white transition-colors">Terms of Service</button>
+            <button key="cookies" className="hover:text-white transition-colors">Cookies</button>
           </div>
         </div>
       </footer>

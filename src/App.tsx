@@ -20,8 +20,9 @@ interface Appointment {
   problemDescription?: string;
   photoUrl?: string;
   address?: string;
-  paymentMethod?: 'bank_transfer' | 'cash' | 'digital_wallet';
+  paymentMethod?: 'bank_transfer' | 'cash' | 'digital_wallet' | 'account_balance';
 }
+
 
 type AppointmentPayload = Omit<Appointment, 'id' | 'status' | 'clientName' | 'icon' | 'userId' | 'notes'>;
 
@@ -39,9 +40,22 @@ interface User {
   lastName: string;
   email: string;
   phone: string;
+  address?: string;
   password?: string;
   role: 'user' | 'admin';
 }
+
+interface PortfolioProject {
+  id: string;
+  title: string;
+  description: string;
+  beforeImg?: string;
+  afterImg?: string;
+  testimonial?: string;
+  clientName?: string;
+  rating: number;
+}
+
 
 // The one email that grants admin access
 const ADMIN_EMAIL = 'admin@maintenco.com';
@@ -243,7 +257,24 @@ const translations = {
     testimonial2Name: 'Carlos Lopez',
     testimonial3: 'The best maintenance service I have ever used. Quick response and flawless work.',
     testimonial3Name: 'Ana Rodriguez',
-    monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    monthNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    // New Translations
+    privacyPolicy: 'Privacy Policy',
+    termsOfService: 'Terms of Service',
+    cookies: 'Cookies',
+    allRightsReserved: 'ALL RIGHTS RESERVED.',
+    professionalMaintenance: 'Professional Maintenance',
+    contactDesc: 'Providing high-quality home maintenance and specialized repairs since 2010. Your comfort is our priority.',
+    sending: 'Sending...',
+    successContact: 'Message Sent!',
+    portfolioAdmin: 'Portfolio Management',
+    addProject: 'Add Project',
+    editProject: 'Edit Project',
+    projectTitle: 'Project Title',
+    projectDesc: 'Description',
+    beforeImage: 'Before Image URL',
+    afterImage: 'After Image URL',
+    deleteConfirm: 'Are you sure you want to delete this project?'
   },
   es: {
     brand: 'MaintenCo',
@@ -356,7 +387,24 @@ const translations = {
     testimonial2Name: 'Carlos López',
     testimonial3: 'El mejor servicio de mantenimiento que he utilizado. Respuesta rápida y trabajo impecable.',
     testimonial3Name: 'Ana Rodríguez',
-    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+    // New Translations
+    privacyPolicy: 'Política de Privacidad',
+    termsOfService: 'Términos de Servicio',
+    cookies: 'Cookies',
+    allRightsReserved: 'TODOS LOS DERECHOS RESERVADOS.',
+    professionalMaintenance: 'Mantenimiento Profesional',
+    contactDesc: 'Brindamos mantenimiento para el hogar y reparaciones especializadas de alta calidad desde 2010. Tu comodidad es nuestra prioridad.',
+    sending: 'Enviando...',
+    successContact: '¡Mensaje Enviado!',
+    portfolioAdmin: 'Gestión del Portafolio',
+    addProject: 'Agregar Proyecto',
+    editProject: 'Editar Proyecto',
+    projectTitle: 'Título del Proyecto',
+    projectDesc: 'Descripción',
+    beforeImage: 'URL Imagen Antes',
+    afterImage: 'URL Imagen Después',
+    deleteConfirm: '¿Seguro que deseas eliminar este proyecto?'
   }
 };
 

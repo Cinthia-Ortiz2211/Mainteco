@@ -169,6 +169,27 @@ app.post('/api/login', (req, res) => {
     res.json(user);
 });
 
+app.patch('/api/users/:id', (req, res) => {
+    const { id } = req.params;
+    const { firstName, lastName, phone, address } = req.body;
+    try {
+        db.prepare(`
+            UPDATE users SET firstName = ?, lastName = ?, phone = ?, address = ? WHERE id = ?
+        `).run(firstName, lastName, phone, address, id);
+        
+        const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as any;
+        if (user) {
+            delete user.password;
+            res.json(user);
+        } else {
+            res.status(404).json({ error: 'User not found' });
+        }
+    } catch (error: any) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
 // --- Appointment Endpoints ---
 
 app.get('/api/appointments', (req, res) => {
@@ -204,13 +225,14 @@ app.post('/api/appointments', (req, res) => {
 
     try {
         db.prepare(`
-        INSERT INTO appointments (id, userId, service, date, time, tag, notes, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, userId, service, date, time, tag, notes || '', 'pending');
+        INSERT INTO appointments (id, userId, service, date, time, tag, notes, problemDescription, address, photoUrl, paymentMethod, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(id, userId, service, date, time, tag, notes || '', req.body.problemDescription || null, req.body.address || null, req.body.photoUrl || null, req.body.paymentMethod || null, 'pending');
 
         const user = db.prepare('SELECT firstName, lastName FROM users WHERE id = ?').get(userId) as any;
         const newAppt = {
             id, userId, service, date, time, tag, notes, status: 'pending',
+            problemDescription: req.body.problemDescription, address: req.body.address, photoUrl: req.body.photoUrl, paymentMethod: req.body.paymentMethod,
             clientName: user ? `${user.firstName} ${user.lastName}` : 'Old Client'
         };
         res.status(201).json(newAppt);
@@ -333,6 +355,59 @@ app.delete('/api/admin/availability', (req, res) => {
         db.prepare('DELETE FROM availability_rules WHERE type = ? AND LOWER(specificDate) = LOWER(?)').run(type, specificDate);
     }
     res.json({ success: true });
+});
+
+// --- Portfolio Endpoints ---
+
+app.get('/api/portfolio', (req, res) => {
+    try {
+        const portfolio = db.prepare('SELECT * FROM portfolio').all();
+        res.json(portfolio);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch portfolio' });
+    }
+});
+
+app.post('/api/portfolio', (req, res) => {
+    const { title, description, beforeImg, afterImg, testimonial, clientName, rating } = req.body;
+    const id = randomUUID();
+    try {
+        db.prepare(`
+            INSERT INTO portfolio (id, title, description, beforeImg, afterImg, testimonial, clientName, rating)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(id, title, description, beforeImg || null, afterImg || null, testimonial || null, clientName || null, rating || 5);
+        
+        const newProject = db.prepare('SELECT * FROM portfolio WHERE id = ?').get(id);
+        res.status(201).json(newProject);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to add portfolio project' });
+    }
+});
+
+app.patch('/api/portfolio/:id', (req, res) => {
+    const { id } = req.params;
+    const { title, description, beforeImg, afterImg, testimonial, clientName, rating } = req.body;
+    try {
+        db.prepare(`
+            UPDATE portfolio SET title = ?, description = ?, beforeImg = ?, afterImg = ?, testimonial = ?, clientName = ?, rating = ?
+            WHERE id = ?
+        `).run(title, description, beforeImg || null, afterImg || null, testimonial || null, clientName || null, rating || 5, id);
+        
+        const updatedProject = db.prepare('SELECT * FROM portfolio WHERE id = ?').get(id);
+        res.json(updatedProject);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update portfolio project' });
+    }
+});
+
+app.delete('/api/portfolio/:id', (req, res) => {
+    const { id } = req.params;
+    try {
+        db.prepare('DELETE FROM portfolio WHERE id = ?').run(id);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete portfolio project' });
+    }
 });
 
 app.listen(port, () => {

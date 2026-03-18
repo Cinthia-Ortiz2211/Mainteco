@@ -14,9 +14,11 @@ db.exec(`
     lastName TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     phone TEXT,
+    address TEXT,
     password TEXT NOT NULL,
     role TEXT CHECK(role IN ('user', 'admin')) DEFAULT 'user'
   );
+
 
   CREATE TABLE IF NOT EXISTS appointments (
     id TEXT PRIMARY KEY,
@@ -26,9 +28,14 @@ db.exec(`
     time TEXT NOT NULL,
     status TEXT CHECK(status IN ('pending', 'accepted', 'declined')) DEFAULT 'pending',
     tag TEXT CHECK(tag IN ('Routine', 'Urgent')) DEFAULT 'Routine',
+    problemDescription TEXT,
+    photoUrl TEXT,
+    address TEXT,
+    paymentMethod TEXT,
     notes TEXT,
     FOREIGN KEY (userId) REFERENCES users(id)
   );
+
 
   CREATE TABLE IF NOT EXISTS availability_rules (
     id TEXT PRIMARY KEY,
@@ -38,6 +45,17 @@ db.exec(`
     enabled INTEGER DEFAULT 1,
     startTime TEXT,
     endTime TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS portfolio (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    beforeImg TEXT,
+    afterImg TEXT,
+    testimonial TEXT,
+    clientName TEXT,
+    rating INTEGER DEFAULT 5
   );
 `);
 

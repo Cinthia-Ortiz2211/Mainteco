@@ -298,12 +298,12 @@ const translations = {
     next: 'Siguiente',
     back: 'Atrás',
     welcomeBack: 'Bienvenido de nuevo',
-    signinSub: 'Inicia sesión con tu email para acceder a tu plan de mantenimiento.',
-    noAccount: '¿No tienes cuenta?',
-    registerNow: 'Regístrate ahora',
-    hasAccount: '¿Ya tienes cuenta?',
+    signinSub: 'Iniciá sesión con tu email para acceder a tu plan de mantenimiento.',
+    noAccount: '¿No tenés cuenta?',
+    registerNow: 'Registrate ahora',
+    hasAccount: '¿Ya tenés cuenta?',
     registerTitle: 'Crear Cuenta',
-    registerSub: 'Por favor, proporciona tu información de contacto para iniciar tu plan.',
+    registerSub: 'Por favor, proporcioná tu información de contacto para iniciar tu plan.',
     adminTitle: 'Panel de Administración',
     pendingAppts: 'Citas Pendientes',
     accepted: 'Aceptadas',
@@ -313,7 +313,7 @@ const translations = {
     urgent: 'Urgente',
     routine: 'Rutina',
     selectService: 'Seleccionar Servicio',
-    servicePlaceholder: '¿Con qué necesitas ayuda?',
+    servicePlaceholder: '¿Con qué necesitás ayuda?',
     selectDate: 'Seleccionar Fecha',
     selectTime: 'Seleccionar Hora',
     confirmAppt: 'Confirmar Cita',
@@ -353,7 +353,7 @@ const translations = {
     alreadyRegistered: 'Correo ya registrado',
     myAppointments: 'Mis Citas',
     requestNewAppt: 'Solicitar nueva cita',
-    verifyData: 'Verifica tus datos',
+    verifyData: 'Verificá tus datos',
     confirmDetails: 'Confirmar detalles',
     confirmAndSend: 'Confirmar y enviar',
     backToSelection: 'Volver',
@@ -371,6 +371,48 @@ const translations = {
     fairPriceDesc: 'Presupuestos transparentes sin cargos ocultos. Calidad al precio correcto.',
     guarantee: 'Garantía de Servicio',
     guaranteeDesc: 'Cada trabajo respaldado por nuestra garantía de satisfacción. Tranquilidad incluida.',
+    readyToStart: '¿Estás listo para empezar?',
+    readyToStartSub: 'Programá tu primera cita hoy y disfrutá de un hogar sin preocupaciones.',
+    registerSuccess: '¡Registro Exitoso!',
+    registerSuccessDesc: 'Tu cuenta ha sido creada exitosamente. Ya podés iniciar sesión y programar tu cita.',
+    goToLogin: 'Iniciar Sesión',
+    problemDescription: 'Describí tu Problema',
+    problemDescPlaceholder: 'Por favor, describí el inconveniente con el que necesitás ayuda...',
+    uploadPhoto: 'Subir Foto (Opcional)',
+    uploadPhotoHint: 'Adjuntá una foto del problema para ayudarnos a evaluarlo',
+    address: 'Dirección del Servicio',
+    addressPlaceholder: 'Ingresá la dirección completa donde se necesita el servicio',
+    cancelAppointment: 'Cancelar Cita',
+    cancelConfirmTitle: '¿Cancelar Cita?',
+    cancelConfirmMsg: '¿Estás seguro que deseás cancelar esta cita? Esta acción no se puede deshacer.',
+    confirmCancel: 'Sí, Cancelar',
+    keepAppointment: 'Mantener Cita',
+    cancelled: 'Cancelada',
+    myProfile: 'Mi Perfil',
+    editProfile: 'Editar Perfil',
+    saveProfile: 'Guardar Cambios',
+    profileUpdated: 'Perfil actualizado exitosamente',
+    personalInfo: 'Información Personal',
+    paymentMethod: 'Método de Pago',
+    bankTransfer: 'Transferencia Bancaria',
+    cash: 'Efectivo',
+    accountBalance: 'Saldo en Cuenta',
+    selectPayment: 'Seleccioná el Método de Pago',
+    portfolio: 'Nuestro Trabajo',
+    portfolioSub: 'Explorá nuestros proyectos terminados y mirá la calidad de nuestro trabajo',
+    projectBefore: 'Antes',
+    projectAfter: 'Después',
+    viewProject: 'Ver Proyecto',
+    clientTestimonial: 'Testimonio del Cliente',
+    completedProjects: 'Proyectos Terminados',
+    directContact: 'Contacto Directo',
+    quickMessage: 'Mensaje Rápido',
+    yourName: 'Tu Nombre',
+    yourEmail: 'Tu Correo',
+    yourMessage: 'Tu Mensaje',
+    sendMessage: 'Enviar Mensaje',
+    date: 'Fecha',
+    time: 'Hora',
     // Footer
     chatWhatsApp: 'Chatear por WhatsApp',
     followUs: 'Seguinos',
@@ -404,7 +446,7 @@ const translations = {
     projectDesc: 'Descripción',
     beforeImage: 'URL Imagen Antes',
     afterImage: 'URL Imagen Después',
-    deleteConfirm: '¿Seguro que deseas eliminar este proyecto?'
+    deleteConfirm: '¿Seguro que deseás eliminar este proyecto?'
   }
 };
 
@@ -863,8 +905,8 @@ const LoginView = ({ onLogin, onSwitchToRegister, onGoHome, t }: { onLogin: (ema
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-slate-700 ml-1">{t('email')}</label>
             <input
-              className="w-full px-4 py-3.5 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              placeholder="example@email.com"
+              className="w-full px-4 py-3.5 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="ejemplo@email.com"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -988,8 +1030,8 @@ const RegisterView = ({ onRegister, onSwitchToLogin, onGoHome, t }: { onRegister
             </div>
             <div className="relative">
               <input
-                className="w-full px-4 py-3.5 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="example@email.com"
+                className="w-full px-4 py-3.5 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="ejemplo@email.com"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -1087,7 +1129,7 @@ const RegisterSuccessView = ({ onGoToLogin, t }: { onGoToLogin: () => void; t: (
 
 const ProfileView = ({ user, onSave, onGoHome, t }: {
   user: User;
-  onSave: (updated: User) => void;
+  onSave: (updated: User) => Promise<boolean>;
   onGoHome: () => void;
   t: (k: keyof typeof translations['en']) => string;
   key?: string;
@@ -1096,11 +1138,13 @@ const ProfileView = ({ user, onSave, onGoHome, t }: {
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    onSave(formData);
-    setEditing(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    const success = await onSave(formData);
+    if (success) {
+      setEditing(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    }
   };
 
   return (
@@ -1227,6 +1271,26 @@ const ProfileView = ({ user, onSave, onGoHome, t }: {
                 </div>
               )}
             </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">{t('address' as any) || 'Dirección'}</label>
+              {editing ? (
+                <div className="flex items-center gap-2 px-4 py-3 border border-slate-200 bg-white rounded-xl focus-within:ring-2 focus-within:ring-primary">
+                  <Icons.MapPin className="w-4 h-4 text-slate-400" />
+                  <input
+                    className="flex-1 bg-transparent border-none outline-none text-sm font-medium w-full"
+                    value={formData.address || ''}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="Calle Falsa 123"
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 rounded-xl">
+                  <Icons.MapPin className="w-4 h-4 text-slate-400" />
+                  <p className="text-sm font-bold text-slate-900">{user.address || '—'}</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {editing && (
@@ -1252,42 +1316,13 @@ const ProfileView = ({ user, onSave, onGoHome, t }: {
   );
 };
 
-const PortfolioView = ({ onGoHome, onSchedule, t }: {
+const PortfolioView = ({ projects, onGoHome, onSchedule, t }: {
+  projects: PortfolioProject[];
   onGoHome: () => void;
   onSchedule: () => void;
   t: (k: keyof typeof translations['en']) => string;
   key?: string;
 }) => {
-  const projects = [
-    {
-      title: t('bathroomRenovation' as any),
-      description: t('bathroomDesc' as any),
-      beforeImg: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&h=400&fit=crop',
-      afterImg: '/images/portfolio/bathroom_after.png',
-      testimonial: t('testimonial1' as any),
-      clientName: t('testimonial1Name' as any),
-      rating: 5
-    },
-    {
-      title: t('kitchenUpgrade' as any),
-      description: t('kitchenDesc' as any),
-      beforeImg: 'https://images.unsplash.com/photo-1556911223-e15206781dd0?w=600&h=400&fit=crop',
-      afterImg: '/images/portfolio/kitchen_after.png',
-      testimonial: t('testimonial2' as any),
-      clientName: t('testimonial2Name' as any),
-      rating: 5
-    },
-    {
-      title: t('deckInstallation' as any),
-      description: t('deckDesc' as any),
-      beforeImg: 'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?w=600&h=400&fit=crop',
-      afterImg: '/images/portfolio/deck_after.png',
-      testimonial: t('testimonial3' as any),
-      clientName: t('testimonial3Name' as any),
-      rating: 5
-    }
-  ];
-
   const [expandedProject, setExpandedProject] = useState<number | null>(null);
 
   return (
@@ -1495,6 +1530,10 @@ const AdminView = ({
   onUpdateAvailability,
   onSyncAvailability,
   onDeleteAvailability,
+  portfolioProjects,
+  onAddProject,
+  onEditProject,
+  onDeleteProject,
   t,
   language
 }: {
@@ -1508,12 +1547,49 @@ const AdminView = ({
   onUpdateAvailability: (newConfig: AvailabilityConfig) => void;
   onSyncAvailability: (payload: any) => Promise<void>;
   onDeleteAvailability: (payload: any) => Promise<void>;
+  portfolioProjects: PortfolioProject[];
+  onAddProject: (p: Omit<PortfolioProject, 'id'>) => void;
+  onEditProject: (id: string, p: Partial<PortfolioProject>) => void;
+  onDeleteProject: (id: string) => void;
   t: (k: keyof typeof translations['en']) => string;
   language: Language;
   key?: string;
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Appointment> | null>(null);
+
+  const [editingPortfolioId, setEditingPortfolioId] = useState<string | null>(null);
+  const [portfolioForm, setPortfolioForm] = useState<Partial<PortfolioProject>>({});
+  const [showPortfolioModal, setShowPortfolioModal] = useState(false);
+
+  const startEditPortfolio = (p?: PortfolioProject) => {
+    if (p) {
+      setEditingPortfolioId(p.id);
+      setPortfolioForm({ ...p });
+    } else {
+      setEditingPortfolioId(null);
+      setPortfolioForm({ title: '', description: '', rating: 5 });
+    }
+    setShowPortfolioModal(true);
+  };
+
+  const handleSavePortfolio = () => {
+    if (editingPortfolioId) {
+      onEditProject(editingPortfolioId, portfolioForm);
+    } else {
+      onAddProject(portfolioForm as any);
+    }
+    setShowPortfolioModal(false);
+  };
+
+  const handlePortfolioPhoto = (e: React.ChangeEvent<HTMLInputElement>, field: 'beforeImg' | 'afterImg') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setPortfolioForm(prev => ({ ...prev, [field]: reader.result as string }));
+      reader.readAsDataURL(file);
+    }
+  };
 
   const pendingCount = appointments.filter(a => a.status === 'pending').length;
   const acceptedCount = appointments.filter(a => a.status === 'accepted').length;
@@ -1700,7 +1776,7 @@ const AdminView = ({
               <input
                 id="block-date"
                 type="text"
-                placeholder="Mar 15"
+                placeholder="15 Mar"
                 className="flex-1 p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none"
               />
               <button
@@ -1761,7 +1837,7 @@ const AdminView = ({
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                <input id="exc-date" type="text" placeholder="Mar 10" className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none" />
+                <input id="exc-date" type="text" placeholder="10 Mar" className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none" />
                 <input id="exc-start" type="text" placeholder="10:00" className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none" />
                 <input id="exc-end" type="text" placeholder="13:00" className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none" />
                 <button
@@ -1889,6 +1965,44 @@ const AdminView = ({
             </div>
           )}
         </div>
+
+        {/* Portfolio Management */}
+        <div className="space-y-4 pt-6 border-t border-slate-100">
+          <div className="flex items-center justify-between">
+            <h3 className="text-slate-900 text-lg font-bold">{t('portfolioAdmin' as any) || 'Gestión del Portafolio'}</h3>
+            <button
+              onClick={() => startEditPortfolio()}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-[#1240a8] transition-colors"
+            >
+              <Icons.PlusCircle className="w-4 h-4" /> {t('addProject' as any) || 'Agregar'}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {portfolioProjects.map(p => (
+              <div key={p.id} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex flex-col gap-3">
+                 <div className="flex justify-between items-start">
+                   <div>
+                     <h4 className="font-bold text-slate-900">{p.title}</h4>
+                     <p className="text-xs text-slate-500 line-clamp-2 mt-1">{p.description}</p>
+                   </div>
+                   <div className="flex gap-2">
+                     <button onClick={() => startEditPortfolio(p)} className="p-1.5 rounded-lg bg-slate-50 text-slate-500 hover:text-primary transition-colors">
+                       <Icons.Edit3 className="w-4 h-4" />
+                     </button>
+                     <button onClick={() => onDeleteProject(p.id)} className="p-1.5 rounded-lg bg-slate-50 text-slate-500 hover:text-rose-500 transition-colors">
+                       <Icons.Trash2 className="w-4 h-4" />
+                     </button>
+                   </div>
+                 </div>
+              </div>
+            ))}
+            {portfolioProjects.length === 0 && (
+              <p className="text-slate-400 text-sm font-medium col-span-full text-center py-6">{language === 'es' ? 'No hay trabajos en el portafolio.' : 'No portfolio projects found.'}</p>
+            )}
+          </div>
+        </div>
+
       </main>
 
       {/* Edit Modal/Panel */}
@@ -2015,6 +2129,78 @@ const AdminView = ({
                   >
                     {t('save')}
                   </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+
+        {showPortfolioModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPortfolioModal(false)}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200]"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-white rounded-t-[32px] shadow-2xl z-[201] overflow-y-auto"
+            >
+              <div className="p-6 pb-12 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-black text-slate-900">{editingPortfolioId ? (t('editProject' as any) || 'Editar') : (t('addProject' as any) || 'Agregar')}</h3>
+                  <button onClick={() => setShowPortfolioModal(false)} className="p-2 rounded-full bg-slate-100 text-slate-400">
+                    <Icons.X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('projectTitle' as any) || 'Título'}</label>
+                    <input type="text" value={portfolioForm.title || ''} onChange={e => setPortfolioForm({...portfolioForm, title: e.target.value})} className="w-full p-3 rounded-xl border-2 border-slate-100 text-sm font-bold focus:border-primary outline-none transition-all" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('projectDesc' as any) || 'Descripción'}</label>
+                    <textarea value={portfolioForm.description || ''} onChange={e => setPortfolioForm({...portfolioForm, description: e.target.value})} className="w-full p-3 rounded-xl border-2 border-slate-100 text-sm font-medium focus:border-primary outline-none transition-all min-h-[80px]" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('beforeImage' as any) || 'Antes (Foto)'}</label>
+                      <label className="flex items-center justify-center h-24 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-primary bg-slate-50 transition-colors relative overflow-hidden">
+                        {portfolioForm.beforeImg ? (
+                          <img src={portfolioForm.beforeImg} className="absolute inset-0 w-full h-full object-cover" alt="Before" />
+                        ) : <Icons.Upload className="w-5 h-5 text-slate-400" />}
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handlePortfolioPhoto(e, 'beforeImg')} />
+                      </label>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('afterImage' as any) || 'Después (Foto)'}</label>
+                      <label className="flex items-center justify-center h-24 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-primary bg-slate-50 transition-colors relative overflow-hidden">
+                        {portfolioForm.afterImg ? (
+                          <img src={portfolioForm.afterImg} className="absolute inset-0 w-full h-full object-cover" alt="After" />
+                        ) : <Icons.Upload className="w-5 h-5 text-slate-400" />}
+                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handlePortfolioPhoto(e, 'afterImg')} />
+                      </label>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{language === 'es' ? 'Nombre Cliente (Testimonio)' : 'Client Name'}</label>
+                    <input type="text" value={portfolioForm.clientName || ''} onChange={e => setPortfolioForm({...portfolioForm, clientName: e.target.value})} className="w-full p-3 rounded-xl border-2 border-slate-100 text-sm font-medium focus:border-primary outline-none transition-all" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{language === 'es' ? 'Testimonio' : 'Testimonial'}</label>
+                    <textarea value={portfolioForm.testimonial || ''} onChange={e => setPortfolioForm({...portfolioForm, testimonial: e.target.value})} className="w-full p-3 rounded-xl border-2 border-slate-100 text-sm italic focus:border-primary outline-none transition-all min-h-[60px]" />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button onClick={() => setShowPortfolioModal(false)} className="flex-1 py-4 rounded-2xl bg-slate-100 text-slate-600 font-bold transition-all active:scale-95">{t('cancel')}</button>
+                  <button disabled={!portfolioForm.title || !portfolioForm.description} onClick={handleSavePortfolio} className="flex-1 py-4 rounded-2xl bg-primary text-white font-bold shadow-xl shadow-primary/25 disabled:bg-slate-300 disabled:shadow-none transition-all active:scale-95">{t('save')}</button>
                 </div>
               </div>
             </motion.div>
@@ -2725,15 +2911,22 @@ export default function App() {
   const [registeredUsers, setRegisteredUsers] = useState<User[]>([]);
 
   const [availability, setAvailability] = useState<AvailabilityConfig>(DEFAULT_AVAILABILITY);
+  const [portfolioProjects, setPortfolioProjects] = useState<PortfolioProject[]>([]);
 
   const [authError, setAuthError] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
-      const [apptsRes, availRes] = await Promise.all([
+      const [apptsRes, availRes, portfolioRes] = await Promise.all([
         fetch(`${API_URL}/appointments${user?.role === 'admin' ? '?role=admin' : `?userId=${user?.id}`}`),
-        fetch(`${API_URL}/availability`)
+        fetch(`${API_URL}/availability`),
+        fetch(`${API_URL}/portfolio`)
       ]);
+
+      if (portfolioRes.ok) {
+        const pData = await portfolioRes.json();
+        setPortfolioProjects(pData);
+      }
 
       if (apptsRes.ok) {
         const data = await apptsRes.json();
@@ -3039,6 +3232,43 @@ export default function App() {
     setView('home');
   };
 
+  const handleAddProject = async (project: Omit<PortfolioProject, 'id'>) => {
+    try {
+      const res = await fetch(`${API_URL}/portfolio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(project)
+      });
+      if (res.ok) await fetchData();
+    } catch (e) {
+      console.error('Error adding project:', e);
+    }
+  };
+
+  const handleEditProject = async (id: string, updated: Partial<PortfolioProject>) => {
+    try {
+      const res = await fetch(`${API_URL}/portfolio/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      if (res.ok) await fetchData();
+    } catch (e) {
+      console.error('Error editing project:', e);
+    }
+  };
+
+  const handleDeleteProject = async (id: string) => {
+    try {
+      const res = await fetch(`${API_URL}/portfolio/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) await fetchData();
+    } catch (e) {
+      console.error('Error deleting project:', e);
+    }
+  };
+
   const handleScheduleClick = () => {
     setAuthError(null);
     if (user) {
@@ -3056,13 +3286,37 @@ export default function App() {
     setAppointments(appointments.map(a => a.id === id ? { ...a, status: 'cancelled' } : a));
   };
 
-  const handleSaveProfile = (updated: User) => {
-    setUser(updated);
-    localStorage.setItem('mainten_user', JSON.stringify(updated));
-    // Also update in registered users list
-    const users = JSON.parse(localStorage.getItem('mainten_users') || '[]');
-    const nextUsers = users.map((u: User) => u.id === updated.id ? updated : u);
-    localStorage.setItem('mainten_users', JSON.stringify(nextUsers));
+  const handleSaveProfile = async (updated: User): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_URL}/users/${updated.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      if (res.ok) {
+        const savedUser = await res.json();
+        setUser(savedUser);
+        localStorage.setItem('mainten_user', JSON.stringify(savedUser));
+        // Also update in registered users list
+        const users = JSON.parse(localStorage.getItem('mainten_users') || '[]');
+        const nextUsers = users.map((u: User) => u.id === savedUser.id ? savedUser : u);
+        localStorage.setItem('mainten_users', JSON.stringify(nextUsers));
+        return true;
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Error saving profile');
+        return false;
+      }
+    } catch(e) {
+      console.error('Error saving profile:', e);
+      // Fallback
+      setUser(updated);
+      localStorage.setItem('mainten_user', JSON.stringify(updated));
+      const users = JSON.parse(localStorage.getItem('mainten_users') || '[]');
+      const nextUsers = users.map((u: User) => u.id === updated.id ? updated : u);
+      localStorage.setItem('mainten_users', JSON.stringify(nextUsers));
+      return true; // Return true as fallback just to clear the UI editing state
+    }
   };
 
   const updateAppointmentStatus = async (id: string, status: 'accepted' | 'declined') => {
@@ -3174,6 +3428,10 @@ export default function App() {
                 onUpdateAvailability={updateAvailability}
                 onSyncAvailability={syncAvailabilityRule}
                 onDeleteAvailability={deleteAvailabilityRule}
+                portfolioProjects={portfolioProjects}
+                onAddProject={handleAddProject}
+                onEditProject={handleEditProject}
+                onDeleteProject={handleDeleteProject}
                 t={t}
                 language={language}
               />
@@ -3203,6 +3461,7 @@ export default function App() {
             {view === 'portfolio' && (
               <PortfolioView
                 key="portfolio"
+                projects={portfolioProjects}
                 onGoHome={() => setView('home')}
                 onSchedule={handleScheduleClick}
                 t={t}
